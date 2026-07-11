@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
-import { PlusCircle, Edit, Store, Activity, IndianRupee, TrendingUp, User, X, Sparkles, ChevronRight, Zap, AlertCircle, Trash2, Search, Upload, FileText, MapPin, Clock, BarChart3, Shield, ArrowUpRight, Briefcase } from "lucide-react"
+import { PlusCircle, Edit, Store, IndianRupee, TrendingUp, User, X, Sparkles, ChevronRight, Zap, AlertCircle, Trash2, Search, Upload, FileText, MapPin, Clock, BarChart3, Shield, ArrowUpRight, Briefcase } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { getUserShopsApiV1ShopsGet } from "@/client"
 import { motion, AnimatePresence, type Variants } from "framer-motion"
