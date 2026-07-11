@@ -9,10 +9,12 @@ export function AdminShopsList() {
   const [page, setPage] = useState(0)
   const limit = 50
 
-  const { data: shops, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['adminShops', page],
-    queryFn: () => fetchAdminShops(page * limit, limit)
+    queryFn: () => fetchAdminShops(page * limit, limit),
+    refetchInterval: 5000
   })
+  const shops = (data as any[]) || []
 
   if (isLoading) {
     return (
@@ -45,7 +47,7 @@ export function AdminShopsList() {
           <CardTitle>Shops Directory</CardTitle>
         </CardHeader>
         <CardContent>
-          {shops?.length === 0 ? (
+          {shops.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No shops registered yet.
             </div>

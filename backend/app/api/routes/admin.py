@@ -42,9 +42,17 @@ def get_dashboard_stats(
     
     high_risk = 0
     total_disbursed = 0
+    pending_queue = 0
+    approved_this_week = 0
+    missing_documents = 0
+    priority_actions = []
     
     # Aggregation dictionaries
     growth_dict = {}
+    
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    one_week_ago = now - timedelta(days=7)
     risk_dict = {"Low Risk": 0, "Medium Risk": 0, "High Risk": 0, "Very High Risk": 0}
     
     for app in apps:
@@ -64,6 +72,26 @@ def get_dashboard_stats(
             
         if status == "approved":
             total_disbursed += req_amount
+
+        # Compute Loan Officer metrics
+        parsed_date = None
+        if isinstance(created_at, str):
+            try:
+                parsed_date = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                if parsed_date.tzinfo is None:
+                    parsed_date = parsed_date.replace(tzinfo=timezone.utc)
+            except Exception:
+                pass
+
+        if status == "pending":
+            pending_queue += 1
+            if risk_category in ["High Risk", "Very High Risk"] and len(priority_actions) < 4:
+                priority_actions.append({"id": app.get("id"), "risk_category": risk_category})
+        elif status == "approved":
+            if parsed_date and parsed_date > one_week_ago:
+                approved_this_week += 1
+        elif status == "document_missing" or status == "action_required":
+            missing_documents += 1
             
         # Growth Aggregation (by month)
         if created_at:
@@ -105,7 +133,11 @@ def get_dashboard_stats(
         "total_disbursed": total_disbursed,
         "high_risk_flagged": high_risk,
         "growth_data": growth_data,
-        "risk_data": risk_data
+        "risk_data": risk_data,
+        "pending_queue": pending_queue,
+        "approved_this_week": approved_this_week,
+        "missing_documents": missing_documents,
+        "priority_actions": priority_actions
     }
 
 @router.get("/audit-logs")
@@ -122,7 +154,7 @@ def get_audit_logs(
 def get_all_users(
     skip: int = 0,
     limit: int = 50,
-    current_user: Dict[str, Any] = Depends(require_admin),
+    current_user: Dict[str, Any] = Depends(require_admin_or_officer),
     user_repo: UserRepository = Depends(get_user_repo)
 ):
     return user_repo.get_all_users(skip=skip, limit=limit)

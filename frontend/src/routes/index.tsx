@@ -113,6 +113,7 @@ const router = createBrowserRouter([
     children: [
       { path: "", element: <LoanOfficerDashboard /> },
       { path: "settings", element: <AdminProfile /> },
+      { path: "users", element: <AdminUsersList /> },
       { path: "shops", element: <AdminShopsList /> },
       { path: "applications", element: <AdminApplicationsList /> },
       { path: "notifications", element: <AdminNotifications /> },

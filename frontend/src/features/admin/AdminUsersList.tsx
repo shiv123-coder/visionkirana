@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Users, ChevronLeft, ChevronRight, Loader2, Search, Plus, KeyRound, ShieldAlert, Power } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function AdminUsersList() {
+  const { user: currentUser } = useAuth()
   const [page, setPage] = useState(0)
   const limit = 50
   const queryClient = useQueryClient()
@@ -24,10 +26,12 @@ export function AdminUsersList() {
   // Create user form state
   const [newUser, setNewUser] = useState({ email: "", full_name: "", password: "", role: "loan_officer" })
 
-  const { data: users, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['adminUsers', page],
-    queryFn: () => fetchAdminUsers(page * limit, limit)
+    queryFn: () => fetchAdminUsers(page * limit, limit),
+    refetchInterval: 5000
   })
+  const users = (data as any[]) || []
 
   const roleMutation = useMutation({
     mutationFn: ({ userId, role }: { userId: string, role: string }) => updateUserRole(userId, role),
@@ -57,7 +61,6 @@ export function AdminUsersList() {
   })
 
   const filteredUsers = useMemo(() => {
-    if (!users) return []
     return users.filter(user => {
       const matchesSearch = user.email?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             user.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -104,9 +107,11 @@ export function AdminUsersList() {
           </h1>
           <p className="text-muted-foreground mt-2">Manage all registered users, roles, and access across the platform.</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Create User
-        </Button>
+        {currentUser?.role === 'admin' && (
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Create User
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -152,7 +157,7 @@ export function AdminUsersList() {
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Joined</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {currentUser?.role === 'admin' && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -163,22 +168,33 @@ export function AdminUsersList() {
                         <div className="text-sm text-muted-foreground">{user.email}</div>
                       </TableCell>
                       <TableCell>
-                        <select 
-                          value={user.role || 'user'}
-                          onChange={(e) => roleMutation.mutate({ userId: user.uid, role: e.target.value })}
-                          disabled={roleMutation.isPending || (!user.is_active && user.is_active !== undefined)}
-                          className={`px-2 py-1.5 rounded-md text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50 border transition-colors cursor-pointer disabled:opacity-50 ${
-                            user.role === 'admin' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20' :
-                            user.role === 'loan_officer' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20' :
-                            user.role === 'shop_owner' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' :
-                            'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20 hover:bg-slate-500/20'
-                          }`}
-                        >
-                          <option value="user">USER</option>
-                          <option value="shop_owner">SHOP OWNER</option>
-                          <option value="loan_officer">LOAN OFFICER</option>
-                          <option value="admin">ADMIN</option>
-                        </select>
+                        {currentUser?.role === 'admin' ? (
+                          <select 
+                            value={user.role || 'user'}
+                            onChange={(e) => roleMutation.mutate({ userId: user.uid, role: e.target.value })}
+                            disabled={roleMutation.isPending || (!user.is_active && user.is_active !== undefined)}
+                            className={`px-2 py-1.5 rounded-md text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50 border transition-colors cursor-pointer disabled:opacity-50 ${
+                              user.role === 'admin' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20' :
+                              user.role === 'loan_officer' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20' :
+                              user.role === 'shop_owner' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' :
+                              'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20 hover:bg-slate-500/20'
+                            }`}
+                          >
+                            <option value="user">USER</option>
+                            <option value="shop_owner">SHOP OWNER</option>
+                            <option value="loan_officer">LOAN OFFICER</option>
+                            <option value="admin">ADMIN</option>
+                          </select>
+                        ) : (
+                          <Badge variant="outline" className={`
+                            ${user.role === 'admin' ? 'text-purple-600 border-purple-500/20' :
+                              user.role === 'loan_officer' ? 'text-blue-600 border-blue-500/20' :
+                              user.role === 'shop_owner' ? 'text-emerald-600 border-emerald-500/20' :
+                              'text-slate-600 border-slate-500/20'}
+                          `}>
+                            {user.role?.replace("_", " ").toUpperCase() || "USER"}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         {(user.is_active === undefined || user.is_active) ? (
@@ -190,32 +206,34 @@ export function AdminUsersList() {
                       <TableCell className="text-sm text-muted-foreground">
                         {user.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A"}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setShowResetModal(user.uid)}
-                            title="Reset Password"
-                          >
-                            <KeyRound className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant={(user.is_active === undefined || user.is_active) ? "outline" : "default"} 
-                            className={(user.is_active === undefined || user.is_active) ? "text-destructive hover:text-destructive" : "bg-emerald-600 hover:bg-emerald-700"}
-                            size="sm"
-                            onClick={() => statusMutation.mutate({ userId: user.uid, isActive: !(user.is_active === undefined || user.is_active) })}
-                            disabled={statusMutation.isPending && statusMutation.variables?.userId === user.uid}
-                            title={(user.is_active === undefined || user.is_active) ? "Deactivate Account" : "Activate Account"}
-                          >
-                            {statusMutation.isPending && statusMutation.variables?.userId === user.uid ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Power className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </TableCell>
+                      {currentUser?.role === 'admin' && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setShowResetModal(user.uid)}
+                              title="Reset Password"
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant={(user.is_active === undefined || user.is_active) ? "outline" : "default"} 
+                              className={(user.is_active === undefined || user.is_active) ? "text-destructive hover:text-destructive" : "bg-emerald-600 hover:bg-emerald-700"}
+                              size="sm"
+                              onClick={() => statusMutation.mutate({ userId: user.uid, isActive: !(user.is_active === undefined || user.is_active) })}
+                              disabled={statusMutation.isPending && statusMutation.variables?.userId === user.uid}
+                              title={(user.is_active === undefined || user.is_active) ? "Deactivate Account" : "Activate Account"}
+                            >
+                              {statusMutation.isPending && statusMutation.variables?.userId === user.uid ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Power className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>

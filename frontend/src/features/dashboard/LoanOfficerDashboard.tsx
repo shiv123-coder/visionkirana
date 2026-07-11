@@ -1,6 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Clock, CheckCircle, FileText, Activity } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { fetchDashboardStats } from "@/services/adminService"
+import { useNavigate } from "react-router-dom"
 
 const queueData = [
   { name: 'Mon', pending: 24, reviewed: 18 },
@@ -11,6 +14,31 @@ const queueData = [
 ]
 
 export function LoanOfficerDashboard() {
+  const navigate = useNavigate()
+  const { data: stats, isLoading, error } = useQuery<any>({
+    queryKey: ['adminDashboardStats'],
+    queryFn: fetchDashboardStats,
+    refetchInterval: 5000
+  })
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 space-y-8 flex items-center justify-center min-h-[500px]">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
+          Failed to load dashboard statistics.
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       <div>
@@ -25,7 +53,7 @@ export function LoanOfficerDashboard() {
             <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">34</div>
+            <div className="text-2xl font-bold">{stats.pending_queue || 0}</div>
             <p className="text-xs text-muted-foreground">Applications await review</p>
           </CardContent>
         </Card>
@@ -35,18 +63,18 @@ export function LoanOfficerDashboard() {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">113</div>
-            <p className="text-xs text-muted-foreground">+12% from last week</p>
+            <div className="text-2xl font-bold">{stats.approved_this_week || 0}</div>
+            <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Review Time</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Processed</CardTitle>
             <Activity className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1.2 Hrs</div>
-            <p className="text-xs text-muted-foreground">Better than average (2.0h)</p>
+            <div className="text-2xl font-bold">{stats.total_applications || 0}</div>
+            <p className="text-xs text-muted-foreground">Since launch</p>
           </CardContent>
         </Card>
         <Card>
@@ -55,7 +83,7 @@ export function LoanOfficerDashboard() {
             <FileText className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
+            <div className="text-2xl font-bold">{stats.missing_documents || 0}</div>
             <p className="text-xs text-muted-foreground">Require follow up</p>
           </CardContent>
         </Card>
@@ -91,17 +119,27 @@ export function LoanOfficerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                  <div>
-                    <p className="font-medium text-sm">App #{1000 + i}</p>
-                    <p className="text-xs text-muted-foreground">High AI Risk Score</p>
+              {stats.priority_actions && stats.priority_actions.length > 0 ? (
+                stats.priority_actions.map((app: any, i: number) => (
+                  <div 
+                    key={i} 
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/officer/applications/${app.id}/report`)}
+                  >
+                    <div>
+                      <p className="font-medium text-sm">App #{app.id.substring(0, 8)}</p>
+                      <p className="text-xs text-muted-foreground">{app.risk_category || "High Risk"}</p>
+                    </div>
+                    <div className="text-xs font-medium px-2 py-1 bg-red-100 text-red-700 rounded-full">
+                      Review
+                    </div>
                   </div>
-                  <div className="text-xs font-medium px-2 py-1 bg-red-100 text-red-700 rounded-full">
-                    Review
-                  </div>
+                ))
+              ) : (
+                <div className="text-center p-4 text-muted-foreground text-sm">
+                  No pending high-risk applications.
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

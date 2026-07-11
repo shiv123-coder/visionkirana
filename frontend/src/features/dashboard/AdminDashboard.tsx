@@ -7,9 +7,10 @@ import { fetchDashboardStats } from "@/services/adminService"
 const COLORS = ['#10b981', '#f59e0b', '#f97316', '#ef4444']
 
 export function AdminDashboard() {
-  const { data: stats, isLoading, error } = useQuery({
+  const { data: stats, isLoading, error } = useQuery<any>({
     queryKey: ['adminDashboardStats'],
-    queryFn: fetchDashboardStats
+    queryFn: fetchDashboardStats,
+    refetchInterval: 5000
   })
 
   if (isLoading) {

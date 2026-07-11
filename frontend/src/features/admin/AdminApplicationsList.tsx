@@ -11,10 +11,12 @@ export function AdminApplicationsList() {
   const [page, setPage] = useState(0)
   const limit = 50
 
-  const { data: applications, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['adminApplications', page],
-    queryFn: () => fetchAdminApplications(page * limit, limit)
+    queryFn: () => fetchAdminApplications(page * limit, limit),
+    refetchInterval: 5000
   })
+  const applications = (data as any[]) || []
 
   if (isLoading) {
     return (
@@ -47,7 +49,7 @@ export function AdminApplicationsList() {
           <CardTitle>Applications Directory</CardTitle>
         </CardHeader>
         <CardContent>
-          {applications?.length === 0 ? (
+          {applications.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No applications submitted yet.
             </div>

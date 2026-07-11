@@ -27,7 +27,7 @@ export function Sidebar({ isOpen, setIsOpen, basePath = "/admin" }: SidebarProps
     { icon: LayoutDashboard, label: "Dashboard", href: `${basePath}`, roles: ["admin", "loan_officer"] },
     { icon: Store, label: "Shops", href: `${basePath}/shops`, roles: ["admin", "loan_officer"] },
     { icon: FileText, label: "Applications", href: `${basePath}/applications`, roles: ["admin", "loan_officer"] },
-    { icon: Users, label: "Users", href: `${basePath}/users`, roles: ["admin"] },
+    { icon: Users, label: "Users", href: `${basePath}/users`, roles: ["admin", "loan_officer"] },
     { icon: Users, label: "Demo Requests", href: `${basePath}/demo-requests`, roles: ["admin"] },
     { icon: Activity, label: "Audit Logs", href: `${basePath}/audit-logs`, roles: ["admin"] },
     { icon: Bell, label: "Notifications", href: `${basePath}/notifications`, roles: ["admin", "loan_officer"] },
