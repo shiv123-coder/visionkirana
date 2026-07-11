@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+    
+    function isLoanOfficer() {
+      return isAuthenticated() && request.auth.token.role == 'loan_officer';
+    }
+    
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    match /evidence/{userId}/{filename} {
+      // Users can upload and read their own evidence files
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isLoanOfficer());
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    match /shops/{shopId}/{filename} {
+      // For shop images/documents
+      allow read: if true; // Might be public for shop listings
+      allow write: if isAuthenticated(); // Should be restricted further in a real scenario
+    }
+  }
+}

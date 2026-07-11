@@ -1,0 +1,18 @@
+# Test Credentials for VisionKirana Roles
+# Use these credentials to test different user access levels in the application.
+
+# 1. Admin Role (Full access to all system settings, user management, and global dashboard)
+TEST_ADMIN_EMAIL=admin@visionkirana.com
+TEST_ADMIN_PASSWORD=password123
+
+# 2. Loan Officer Role (Access to review, approve/reject loan applications, view risk profiles)
+TEST_OFFICER_EMAIL=officer@visionkirana.com
+TEST_OFFICER_PASSWORD=password123
+
+# 3. Shop Owner Role (Access to manage their shop, view analytics, apply for loans)
+TEST_SHOP_OWNER_EMAIL=owner@visionkirana.com
+TEST_SHOP_OWNER_PASSWORD=password123
+
+# 4. Standard User Role (Default role upon registration before claiming a shop)
+TEST_USER_EMAIL=user@visionkirana.com
+TEST_USER_PASSWORD=password123

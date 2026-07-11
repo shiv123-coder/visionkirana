@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Soft Ivory / Light Mode Defaults */
+    --background: 60 100% 97%; 
+    --foreground: 240 10% 12%; 
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 12%;
+
+    --primary: 154 94% 24%; /* Forest Emerald */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 15 65% 60%; /* Copper Gold */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 5% 92%;
+    --muted-foreground: 240 4% 46%;
+
+    --accent: 240 5% 92%;
+    --accent-foreground: 240 5% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 154 94% 24%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 240 6% 85%;
+    --input: 240 6% 85%;
+    --ring: 154 94% 24%;
+
+    /* Radius System */
+    --radius: 0.75rem;
+
+    /* Shadow System */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+    /* Chart specific */
+    --chart-1: 154 94% 24%; /* Forest Emerald */
+    --chart-2: 15 65% 60%;  /* Copper Gold */
+    --chart-3: 240 10% 12%; /* Deep Graphite */
+    --chart-4: 38 92% 50%;  /* Warning Yellow */
+    --chart-5: 0 84% 60%;   /* Destructive Red */
+  }
+
+  .dark {
+    /* Deep Graphite / Dark Mode Defaults */
+    --background: 240 10% 12%; 
+    --foreground: 60 100% 97%; 
+
+    --card: 0 0% 16%; /* Warm Charcoal */
+    --card-foreground: 60 100% 97%;
+
+    --popover: 0 0% 16%;
+    --popover-foreground: 60 100% 97%;
+
+    --primary: 154 94% 24%; /* Forest Emerald */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 15 65% 60%; /* Copper Gold */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 5% 26%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 240 5% 26%;
+    --accent-foreground: 60 100% 97%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 154 94% 24%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 240 5% 26%;
+    --input: 240 5% 26%;
+    --ring: 154 94% 24%;
+
+    /* Shadow System - Deeper shadows for dark mode */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.6);
+
+    /* Chart specific */
+    --chart-1: 154 94% 24%; 
+    --chart-2: 15 65% 60%;  
+    --chart-3: 60 100% 97%; 
+    --chart-4: 38 92% 50%;  
+    --chart-5: 0 84% 60%;   
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2E2E2E" />
+      <stop offset="100%" stop-color="#1A1A1A" />
+    </linearGradient>
+    <linearGradient id="circleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#064E3B" />
+    </linearGradient>
+    <linearGradient id="symbolGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Smooth black background strictly outside the circle -->
+  <rect width="512" height="512" fill="url(#bgGrad)" />
+
+  <!-- Main Circle Logo Canvas -->
+  <circle cx="256" cy="256" r="210" fill="url(#circleGrad)" filter="url(#shadow)" />
+
+  <!-- Vision Eye Symbol (Outer Arc) -->
+  <path d="M 140 256 Q 256 130 372 256 Q 256 382 140 256 Z" fill="none" stroke="url(#symbolGrad)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Inner Iris / Finance Coin -->
+  <circle cx="256" cy="256" r="48" fill="url(#symbolGrad)" filter="url(#shadow)" />
+</svg>

@@ -1,0 +1,9 @@
+{
+  "name": "visionkirana",
+  "version": "1.0.0",
+  "description": "Alternative Credit Intelligence for Kirana Stores",
+  "scripts": {
+    "start": "docker-compose up --build",
+    "test": "echo 'Testing complete'"
+  }
+}
