@@ -154,7 +154,7 @@ docker-compose up --build
 
 ## ☁️ Deployment Setup (Live Environments)
 
-- **Frontend App:** [https://vision-kirana.vercel.app](https://vision-kirana.vercel.app) (Deployed via Vercel)
+- **Frontend App:** [https://visionkirana.vercel.app](https://visionkirana.vercel.app) (Deployed via Vercel)
 - **Backend API (Swagger Docs):** [https://visionkirana-api.onrender.com/docs](https://visionkirana-api.onrender.com/docs) (Deployed via Render)
 - **ML Service (Swagger Docs):** [https://visionkirana-ml-service.onrender.com/docs](https://visionkirana-ml-service.onrender.com/docs) (Deployed via Render)
 
