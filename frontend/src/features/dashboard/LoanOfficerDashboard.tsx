@@ -4,6 +4,9 @@ import { Clock, CheckCircle, FileText, Activity } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchDashboardStats } from "@/services/adminService"
 import { useNavigate } from "react-router-dom"
+import { useState } from "react"
+import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
+import { Button } from "@/components/ui/button"
 
 const queueData = [
   { name: 'Mon', pending: 24, reviewed: 18 },
@@ -15,6 +18,7 @@ const queueData = [
 
 export function LoanOfficerDashboard() {
   const navigate = useNavigate()
+  const [viewingDocsAppId, setViewingDocsAppId] = useState<string | null>(null)
   const { data: stats, isLoading, error } = useQuery<any>({
     queryKey: ['adminDashboardStats'],
     queryFn: fetchDashboardStats,
@@ -130,8 +134,22 @@ export function LoanOfficerDashboard() {
                       <p className="font-medium text-sm">App #{app.id.substring(0, 8)}</p>
                       <p className="text-xs text-muted-foreground">{app.risk_category || "High Risk"}</p>
                     </div>
-                    <div className="text-xs font-medium px-2 py-1 bg-red-100 text-red-700 rounded-full">
-                      Review
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setViewingDocsAppId(app.id)
+                        }}
+                        className="h-7 text-xs text-indigo-500 border-indigo-500/20 hover:bg-indigo-500/10"
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-1" />
+                        Uploads
+                      </Button>
+                      <div className="text-xs font-medium px-2 py-1 bg-red-100 text-red-700 rounded-full flex items-center">
+                        Review
+                      </div>
                     </div>
                   </div>
                 ))
@@ -144,6 +162,15 @@ export function LoanOfficerDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* View Documents Modal */}
+      {viewingDocsAppId && (
+        <ViewDocumentsModal 
+          applicationId={viewingDocsAppId} 
+          isOpen={!!viewingDocsAppId} 
+          onClose={() => setViewingDocsAppId(null)} 
+        />
+      )}
     </div>
   )
 }

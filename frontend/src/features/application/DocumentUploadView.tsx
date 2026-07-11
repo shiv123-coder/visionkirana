@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { FileUpload } from "@/components/ui/FileUpload"
 import { LiveAudioRecorder } from "@/components/ui/LiveAudioRecorder"
-import { uploadFile, type FileCategory, type SpecificType } from "@/services/uploadService"
+import { uploadFile, deleteUpload, type FileCategory, type SpecificType } from "@/services/uploadService"
 import { ArrowLeft, CheckCircle2, Image as ImageIcon, FileText, Mic, Sparkles } from "lucide-react"
 import { triggerAnalysisApiV1AnalysisTriggerApplicationIdPost } from "@/client"
 import { motion } from "framer-motion"
@@ -14,7 +14,7 @@ export function DocumentUploadView() {
   const { applicationId } = useParams<{ applicationId: string }>()
   const navigate = useNavigate()
   
-  const [uploadState, setUploadState] = useState<Record<string, { uploading: boolean, success: boolean, error?: string }>>({})
+  const [uploadState, setUploadState] = useState<Record<string, { uploading: boolean, success: boolean, error?: string, docId?: string }>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [audioMode, setAudioMode] = useState<"upload" | "record">("upload")
 
@@ -24,16 +24,34 @@ export function DocumentUploadView() {
     setUploadState(prev => ({ ...prev, [key]: { uploading: true, success: false } }))
     
     try {
-      await uploadFile(file, parseInt(applicationId), category, type)
-      setUploadState(prev => ({ ...prev, [key]: { uploading: false, success: true } }))
+      const res = await uploadFile(file, parseInt(applicationId), category, type)
+      setUploadState(prev => ({ ...prev, [key]: { uploading: false, success: true, docId: res.id.toString() } }))
     } catch (error: any) {
       setUploadState(prev => ({ ...prev, [key]: { uploading: false, success: false, error: error.message } }))
     }
   }
 
+  const handleRemove = async (key: string) => {
+    const docId = uploadState[key]?.docId;
+    if (docId) {
+      try {
+        await deleteUpload(docId);
+      } catch (err) {
+        console.error("Failed to delete upload on server:", err);
+      }
+    }
+    // Clear state regardless of server success to ensure UI updates
+    setUploadState(prev => {
+      const newState = { ...prev };
+      delete newState[key];
+      return newState;
+    });
+  }
+
   const getUploadProps = (key: string) => ({
     isUploading: uploadState[key]?.uploading || false,
     isSuccess: uploadState[key]?.success || false,
+    onRemove: () => handleRemove(key)
   })
 
   // Animation variants
@@ -51,30 +69,27 @@ export function DocumentUploadView() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden pb-20">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[40%] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
+    <div className="min-h-screen bg-background pb-20">
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-6xl">
         <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="mb-8 flex flex-col items-start"
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
         >
-          <Button variant="ghost" onClick={() => navigate("/dashboard")} className="mb-4 hover:bg-background/50 backdrop-blur-sm">
+          <Button variant="ghost" onClick={() => navigate("/dashboard")} className="mb-4 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Button>
           
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="p-2.5 bg-primary/10 rounded-xl text-primary ring-1 ring-primary/20">
-              <Sparkles className="w-6 h-6" />
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-primary" />
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight">Evidence Upload</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Evidence Upload</h1>
           </div>
-          <p className="text-muted-foreground text-lg max-w-2xl">
-            Please upload the required evidence for Application <span className="font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-md">#{applicationId}</span>. The AI will analyze this immediately.
+          <p className="text-muted-foreground max-w-2xl">
+            Upload required evidence for Application <span className="font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-md text-sm">#{applicationId}</span>. The AI will analyze this immediately.
           </p>
         </motion.div>
 
@@ -84,10 +99,9 @@ export function DocumentUploadView() {
           animate="show"
           className="grid grid-cols-1 md:grid-cols-12 gap-6"
         >
-          {/* Images Section (Bento Grid Item 1 - spans 8 cols) */}
+          {/* Images Section */}
           <motion.div variants={itemVariants} className="md:col-span-8">
-            <Card className="h-full border-primary/10 bg-card/60 backdrop-blur-xl shadow-xl hover:border-primary/30 transition-colors duration-500 overflow-hidden relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <Card className="h-full border-border/40 bg-card shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader className="border-b border-border/50 bg-background/40">
                 <div className="flex items-center space-x-2">
                   <ImageIcon className="w-5 h-5 text-primary" />
@@ -132,10 +146,9 @@ export function DocumentUploadView() {
             </Card>
           </motion.div>
 
-          {/* Voice Section (Bento Grid Item 2 - spans 4 cols) */}
+          {/* Voice Section */}
           <motion.div variants={itemVariants} className="md:col-span-4">
-            <Card className="h-full border-indigo-500/10 bg-card/60 backdrop-blur-xl shadow-xl hover:border-indigo-500/30 transition-colors duration-500 overflow-hidden relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <Card className="h-full border-border/40 bg-card shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader className="border-b border-border/50 bg-background/40">
                 <div className="flex items-center space-x-2">
                   <Mic className="w-5 h-5 text-indigo-500" />
@@ -197,10 +210,9 @@ export function DocumentUploadView() {
             </Card>
           </motion.div>
 
-          {/* Financial Documents (Bento Grid Item 3 - spans 12 cols) */}
+          {/* Financial Documents */}
           <motion.div variants={itemVariants} className="md:col-span-12">
-            <Card className="border-emerald-500/10 bg-card/60 backdrop-blur-xl shadow-xl hover:border-emerald-500/30 transition-colors duration-500 overflow-hidden relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <Card className="border-border/40 bg-card shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardHeader className="border-b border-border/50 bg-background/40">
                 <div className="flex items-center space-x-2">
                   <FileText className="w-5 h-5 text-emerald-500" />
@@ -240,7 +252,7 @@ export function DocumentUploadView() {
             <Button 
               variant="premium" 
               size="lg" 
-              className="h-14 px-8 text-lg rounded-2xl shadow-[0_0_2rem_-0.5rem_#10b981] hover:shadow-[0_0_3rem_-0.5rem_#10b981] transition-all duration-300"
+              className="h-12 px-8 text-base rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all"
               disabled={isSubmitting}
               onClick={async () => {
                 setIsSubmitting(true);

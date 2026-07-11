@@ -3,6 +3,11 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Users, Building2, TrendingUp, AlertOctagon } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchDashboardStats } from "@/services/adminService"
+import { getAllApplicationsApiV1AdminApplicationsGet } from "@/client"
+import { useState } from "react"
+import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
+import { FileText, Eye } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 const COLORS = ['#10b981', '#f59e0b', '#f97316', '#ef4444']
 
@@ -12,6 +17,17 @@ export function AdminDashboard() {
     queryFn: fetchDashboardStats,
     refetchInterval: 5000
   })
+
+  const { data: appsResponse } = useQuery({
+    queryKey: ['adminApplications'],
+    queryFn: async () => {
+      const { data } = await getAllApplicationsApiV1AdminApplicationsGet()
+      return data || []
+    },
+    refetchInterval: 10000
+  })
+
+  const [viewingDocsAppId, setViewingDocsAppId] = useState<string | null>(null)
 
   if (isLoading) {
     return (
@@ -156,6 +172,83 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="grid grid-cols-1 mt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Applications</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+                  <tr>
+                    <th className="px-4 py-3 rounded-tl-lg">ID</th>
+                    <th className="px-4 py-3">Amount</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3 rounded-tr-lg text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(appsResponse as any[])?.slice(0, 10).map((app: any, idx: number) => (
+                    <tr key={app.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3 font-mono">{app.id.substring(0, 8)}</td>
+                      <td className="px-4 py-3 font-medium">₹{app.requested_amount?.toLocaleString() || 0}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold capitalize">
+                          {app.status?.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">
+                        {app.created_at ? new Date(app.created_at).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setViewingDocsAppId(app.id)}
+                            className="h-8 text-xs text-indigo-500 border-indigo-500/20 hover:bg-indigo-500/10"
+                          >
+                            <FileText className="w-3.5 h-3.5 mr-1" />
+                            Uploads
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => window.open(`/officer/applications/${app.id}/report`, "_blank")}
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            Report
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!appsResponse || (appsResponse as any[]).length === 0) && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                        No applications found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* View Documents Modal */}
+      {viewingDocsAppId && (
+        <ViewDocumentsModal 
+          applicationId={viewingDocsAppId} 
+          isOpen={!!viewingDocsAppId} 
+          onClose={() => setViewingDocsAppId(null)} 
+        />
+      )}
     </div>
   )
 }

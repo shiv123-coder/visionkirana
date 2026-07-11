@@ -73,3 +73,39 @@ async def upload_evidence(
         "id": doc_id,
         "url": file_url
     }
+
+@router.delete("/{doc_id}")
+@limiter.limit("10/minute")
+async def delete_evidence(
+    request: Request,
+    doc_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_active_user),
+    doc_repo: DocumentRepository = Depends(get_document_repo)
+):
+    """
+    Deletes a file from Cloudinary and removes metadata from Firestore.
+    """
+    # 1. Fetch document to get public_id
+    doc = doc_repo.get_document(doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    # Security: Ensure only the uploader or admin can delete
+    if doc.get("uploaded_by") != current_user.get("uid", current_user.get("id")) and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to delete this document")
+        
+    public_id = doc.get("public_id")
+    resource_type = doc.get("resource_type", "image")
+    
+    # 2. Delete from Cloudinary
+    if public_id:
+        try:
+            cloudinary.uploader.destroy(public_id, resource_type=resource_type)
+        except Exception as e:
+            print(f"Warning: Failed to delete from Cloudinary: {e}")
+            # We still proceed to delete from DB even if Cloudinary fails
+            
+    # 3. Delete from DB
+    doc_repo.delete_document(doc_id)
+    
+    return {"message": "File deleted successfully"}

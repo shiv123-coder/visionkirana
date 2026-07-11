@@ -8,9 +8,10 @@ interface LiveAudioRecorderProps {
   onAudioReady: (file: File) => void;
   isUploading?: boolean;
   isSuccess?: boolean;
+  onRemove?: () => void;
 }
 
-export function LiveAudioRecorder({ onAudioReady, isUploading = false, isSuccess = false }: LiveAudioRecorderProps) {
+export function LiveAudioRecorder({ onAudioReady, isUploading = false, isSuccess = false, onRemove }: LiveAudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -116,7 +117,18 @@ export function LiveAudioRecorder({ onAudioReady, isUploading = false, isSuccess
             <CheckCircle className="w-12 h-12 text-green-500" />
           </div>
           <h3 className="text-lg font-bold text-foreground">Upload Complete</h3>
-          <p className="text-sm text-muted-foreground mt-1">Your voice pitch has been securely saved.</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">Your voice pitch has been securely saved.</p>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              if (onRemove) onRemove();
+              handleDiscard();
+            }}
+            className="text-destructive hover:bg-destructive/10 border-destructive/20"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete & Re-record
+          </Button>
         </motion.div>
       ) : !audioUrl ? (
         <div className="flex flex-col items-center w-full">

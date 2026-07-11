@@ -57,3 +57,41 @@ def get_secure_document_url(
         return {"url": url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate secure URL: {str(e)}")
+
+from app.api.deps_db import get_application_repo, ApplicationRepository
+
+@router.get("/application/{application_id}")
+def get_application_documents(
+    application_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_active_user),
+    doc_repo: DocumentRepository = Depends(get_document_repo),
+    app_repo: ApplicationRepository = Depends(get_application_repo)
+):
+    """
+    Gets a list of all documents uploaded for a specific application.
+    """
+    uid = current_user.get("uid") or current_user.get("id")
+    role = current_user.get("role", "user")
+
+    # Check application ownership
+    app_data = app_repo.get_application(application_id)
+    if not app_data:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    if role not in ["admin", "loan_officer"]:
+        if app_data.get("user_id") != uid:
+            raise HTTPException(status_code=403, detail="Not authorized to view these documents")
+
+    evidence_docs = doc_repo.get_documents_by_application(application_id)
+    evidence_files = []
+    
+    for data in evidence_docs:
+        # We only send back the metadata, client must fetch secure URL separately
+        evidence_files.append({
+            "id": data.get("id"),
+            "category": data.get("file_category"),
+            "type": data.get("specific_type"),
+            "uploaded_at": data.get("created_at")
+        })
+
+    return {"documents": evidence_files}

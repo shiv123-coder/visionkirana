@@ -13,6 +13,7 @@ interface FileUploadProps {
   isUploading?: boolean
   isSuccess?: boolean
   className?: string
+  onRemove?: () => void
 }
 
 export function FileUpload({
@@ -23,7 +24,8 @@ export function FileUpload({
   description,
   isUploading = false,
   isSuccess = false,
-  className
+  className,
+  onRemove
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -105,6 +107,9 @@ export function FileUpload({
   }
 
   const clearFile = () => {
+    if (onRemove) {
+      onRemove()
+    }
     setSelectedFile(null)
     setError(null)
     if (inputRef.current) {
@@ -214,7 +219,7 @@ export function FileUpload({
               </div>
             )}
 
-            {!isUploading && !isSuccess && (
+            {!isUploading && (
               <Button variant="ghost" size="icon" onClick={clearFile} className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full">
                 <X className="w-4 h-4" />
               </Button>

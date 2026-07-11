@@ -68,5 +68,20 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
+
+    // Evidence Files Collection (uploaded documents, images, voice pitches)
+    // All writes happen through the FastAPI backend (Admin SDK), so client writes are denied.
+    match /evidence_files/{fileId} {
+      // Owners can read their own uploads; admins and loan officers can read any
+      allow read: if isAuthenticated() && (resource.data.uploaded_by == request.auth.uid || isAdmin() || isLoanOfficer());
+      // Writes and deletes are managed exclusively by the backend
+      allow write: if false;
+    }
+
+    // Reports Collection (AI-generated analysis reports)
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (isAdmin() || isLoanOfficer());
+      allow write: if false;
+    }
   }
 }
