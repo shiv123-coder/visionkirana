@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileUpload } from "@/components/ui/FileUpload"
+import { LiveAudioRecorder } from "@/components/ui/LiveAudioRecorder"
 import { uploadFile, type FileCategory, type SpecificType } from "@/services/uploadService"
 import { ArrowLeft, CheckCircle2, Image as ImageIcon, FileText, Mic, Sparkles } from "lucide-react"
 import { triggerAnalysisApiV1AnalysisTriggerApplicationIdPost } from "@/client"
@@ -15,6 +16,7 @@ export function DocumentUploadView() {
   
   const [uploadState, setUploadState] = useState<Record<string, { uploading: boolean, success: boolean, error?: string }>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [audioMode, setAudioMode] = useState<"upload" | "record">("upload")
 
   const handleUpload = async (file: File, category: FileCategory, type: SpecificType, key: string) => {
     if (!applicationId) return
@@ -142,14 +144,51 @@ export function DocumentUploadView() {
                 <CardDescription>Explain your loan requirements</CardDescription>
               </CardHeader>
               <CardContent className="p-6">
-                <FileUpload 
-                  label="Audio Recording"
-                  accept="audio/mpeg, audio/wav, audio/x-m4a, audio/mp4"
-                  maxSizeMB={10}
-                  onFileSelect={(f) => handleUpload(f, "audio", "voice_note", "audio")}
-                  {...getUploadProps("audio")}
-                />
-                {uploadState["audio"]?.error && <p className="text-xs text-destructive mt-1 font-medium">{uploadState["audio"].error}</p>}
+                
+                <div className="flex bg-background/50 backdrop-blur-sm p-1 rounded-lg border border-border/50 mb-6 relative">
+                  {/* Sliding highlight */}
+                  <motion.div 
+                    layoutId="audioModeTab"
+                    className="absolute top-1 bottom-1 left-1 bg-indigo-500/20 rounded-md border border-indigo-500/30 w-[calc(50%-4px)]"
+                    animate={{ x: audioMode === "upload" ? 0 : "100%" }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  />
+                  <button 
+                    className={`flex-1 py-2 text-sm font-medium z-10 transition-colors ${audioMode === "upload" ? "text-indigo-500" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setAudioMode("upload")}
+                  >
+                    Upload File
+                  </button>
+                  <button 
+                    className={`flex-1 py-2 text-sm font-medium z-10 transition-colors ${audioMode === "record" ? "text-indigo-500" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setAudioMode("record")}
+                  >
+                    Record Live
+                  </button>
+                </div>
+
+                <div className="min-h-[220px]">
+                  {audioMode === "upload" ? (
+                    <motion.div key="upload" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                      <FileUpload 
+                        label="Audio Recording"
+                        accept="audio/mpeg, audio/wav, audio/x-m4a, audio/mp4"
+                        maxSizeMB={10}
+                        onFileSelect={(f) => handleUpload(f, "audio", "voice_note", "audio")}
+                        {...getUploadProps("audio")}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div key="record" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                      <LiveAudioRecorder 
+                        onAudioReady={(f) => handleUpload(f, "audio", "voice_note", "audio")}
+                        {...getUploadProps("audio")}
+                      />
+                    </motion.div>
+                  )}
+                </div>
+
+                {uploadState["audio"]?.error && <p className="text-xs text-destructive mt-1 font-medium text-center">{uploadState["audio"].error}</p>}
                 
                 <div className="mt-6 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-sm text-foreground/80">
                   <strong>Tip:</strong> Speak clearly about why you need the loan and how your business is currently performing.
