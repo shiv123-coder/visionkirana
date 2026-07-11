@@ -36,6 +36,8 @@ class ShopRegistrationPayload(BaseModel):
     requested_loan: float
     loan_purpose: str
     owner_id: str
+    latitude: float | None = None
+    longitude: float | None = None
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
@@ -66,7 +68,9 @@ def register_shop(
         "state": payload.state,
         "category": payload.category,
         "years_in_business": payload.years_in_business,
-        "monthly_sales": payload.monthly_sales
+        "monthly_sales": payload.monthly_sales,
+        "latitude": payload.latitude,
+        "longitude": payload.longitude
     }
     
     shop_id = shop_repo.create_shop(shop_data)

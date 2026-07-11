@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
 import { useOfflineSync } from "@/contexts/OfflineContext"
 import { enqueueRequest } from "@/lib/syncEngine"
+import { MapPin, CheckCircle2, Loader2 } from "lucide-react"
 
 const shopRegistrationSchema = z.object({
   name: z.string().min(2, "Shop name must be at least 2 characters"),
@@ -31,10 +32,38 @@ export function ShopRegistrationForm() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null)
+  const [locationError, setLocationError] = useState("")
+  const [isCapturingLoc, setIsCapturingLoc] = useState(false)
 
-  
   const { user } = useAuth()
   const { isOnline, refreshQueueCount } = useOfflineSync()
+
+  const captureLocation = () => {
+    setIsCapturingLoc(true)
+    setLocationError("")
+    
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser.")
+      setIsCapturingLoc(false)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        })
+        setIsCapturingLoc(false)
+      },
+      (err) => {
+        setIsCapturingLoc(false)
+        setLocationError("Permission denied or unable to fetch location. Please allow location access to continue.")
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+  }
 
   const {
     register,
@@ -52,12 +81,21 @@ export function ShopRegistrationForm() {
   })
 
   const onSubmit = async (data: ShopRegistrationValues) => {
+    if (!location) {
+      setLocationError("Live GPS Location is strictly required to verify your shop.")
+      return
+    }
+
     setIsSubmitting(true)
     setError("")
 
-    
     try {
-      const payload = { ...data, owner_id: user?.id || "" }
+      const payload = { 
+        ...data, 
+        owner_id: user?.id || "",
+        latitude: location.lat,
+        longitude: location.lng
+      }
       const token = localStorage.getItem("access_token")
       
       if (!isOnline) {
@@ -157,6 +195,38 @@ export function ShopRegistrationForm() {
 
             <div className="space-y-4">
               <h3 className="font-semibold text-lg border-b pb-2">Location</h3>
+              
+              <div className="bg-indigo-50/50 dark:bg-indigo-950/20 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h4 className="font-medium text-indigo-900 dark:text-indigo-300 flex items-center">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Live GPS Verification *
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    We require your exact physical location to verify the shop and prevent fraud. Please allow location permissions.
+                  </p>
+                  {locationError && <p className="text-sm text-destructive font-medium mt-2">{locationError}</p>}
+                </div>
+                <div>
+                  {location ? (
+                    <div className="flex items-center text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      <CheckCircle2 className="w-5 h-5 mr-2" />
+                      <span className="font-medium text-sm">Location Verified</span>
+                    </div>
+                  ) : (
+                    <Button 
+                      type="button" 
+                      onClick={captureLocation} 
+                      disabled={isCapturingLoc}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap"
+                    >
+                      {isCapturingLoc ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <MapPin className="w-4 h-4 mr-2" />}
+                      {isCapturingLoc ? "Capturing..." : "Capture Location"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="address">Full Address *</Label>
                 <Input id="address" {...register("address")} placeholder="123 Main Market Road" />
