@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel, EmailStr
+from app.tasks.notification_tasks import create_notification_task
 import firebase_admin.auth as auth
 from typing import Dict, Any, List
 from app.api.deps import RoleChecker
@@ -167,6 +168,42 @@ def get_all_applications(
     app_repo: ApplicationRepository = Depends(get_application_repo)
 ):
     return app_repo.get_all_applications(skip=skip, limit=limit)
+
+class ApplicationStatusUpdate(BaseModel):
+    status: str
+
+@router.patch("/applications/{app_id}/status")
+def update_application_status(
+    app_id: str,
+    payload: ApplicationStatusUpdate,
+    background_tasks: BackgroundTasks,
+    current_user: Dict[str, Any] = Depends(require_admin_or_officer),
+    app_repo: ApplicationRepository = Depends(get_application_repo)
+):
+    valid_statuses = ["pending_documents", "processing", "approved", "rejected", "failed"]
+    if payload.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of {valid_statuses}")
+        
+    app_data = app_repo.get_application(app_id)
+    if not app_data:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    success = app_repo.update_application_status(app_id, payload.status)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to update application status")
+        
+    # Notify user if approved or rejected
+    if payload.status in ["approved", "rejected"]:
+        action_msg = "approved! Funds will be disbursed shortly." if payload.status == "approved" else "rejected after review."
+        background_tasks.add_task(
+            create_notification_task,
+            type="info" if payload.status == "approved" else "alert",
+            title=f"Loan Application {payload.status.capitalize()}",
+            message=f"Your loan application has been {action_msg}",
+            user_id=app_data.get("user_id")
+        )
+        
+    return {"status": "success", "message": f"Application marked as {payload.status}"}
 
 @router.get("/notifications")
 def get_all_notifications(

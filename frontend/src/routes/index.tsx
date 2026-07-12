@@ -15,6 +15,7 @@ import { AdminNotifications } from "@/features/admin/AdminNotifications";
 import { LoanOfficerDashboard } from "@/features/dashboard/LoanOfficerDashboard";
 import { DocumentUploadView } from "@/features/application/DocumentUploadView";
 import { ApplicationReportView } from "@/features/application/ApplicationReportView";
+import { SanctionLetterView } from "@/features/application/SanctionLetterView";
 import { Navbar } from "@/components/layout/Navbar";
 import SystemStatusPage from "@/pages/SystemStatusPage";
 import { LoginPage } from "@/pages/LoginPage";
@@ -75,6 +76,10 @@ const router = createBrowserRouter([
   {
     path: "/applications/:applicationId/report",
     element: <ApplicationReportView />,
+  },
+  {
+    path: "/verify-loan/:applicationId",
+    element: <SanctionLetterView />,
   },
   {
     path: "/system-status",

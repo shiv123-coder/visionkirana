@@ -43,6 +43,26 @@ export const fetchAdminUsers = async (skip: number = 0, limit: number = 50): Pro
   return data as any[]
 }
 
+export const updateApplicationStatus = async (appId: string, status: string) => {
+  const token = localStorage.getItem("access_token");
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  const response = await fetch(`${apiUrl}/api/v1/admin/applications/${appId}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify({ status })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to update application status');
+  }
+  
+  return response.json();
+}
+
 export const submitDemoRequest = async (payload: any) => {
   const { data, error } = await submitDemoRequestApiV1SystemDemoRequestsPost({ body: payload })
   if (error) throw error

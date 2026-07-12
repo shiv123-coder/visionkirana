@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { NotificationsDropdown } from "@/features/notifications/NotificationsDropdown"
 import { 
   PlusCircle, LayoutDashboard, BadgeDollarSign, Package, Users, Megaphone, 
-  BarChart2, Settings, Search, Bell, Copy, ShoppingCart, 
-  Wallet, TrendingUp, X, AlertCircle, MapPin, Store, Trash2
+  BarChart2, Settings, Search, ShoppingCart, 
+  Wallet, X, AlertCircle, MapPin, Store, Trash2
 } from "lucide-react"
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -243,8 +244,14 @@ export function ShopDashboard() {
 
   const totalSales = shops.reduce((acc, shop) => acc + (shop.monthly_sales || 0), 0)
   const totalOrders = Math.floor(totalSales / 20) || 1430
-  const avgOrderValue = totalSales > 0 ? (totalSales / totalOrders).toFixed(2) : "20.10"
+
   const totalCustomers = Math.floor(totalOrders * 0.6) || 915
+  
+  const totalDisbursed = shops.reduce((acc, shop) => {
+    const approvedApps = shop.applications?.filter(a => a.status === 'approved') || []
+    const shopDisbursed = approvedApps.reduce((sum, app) => sum + (app.requested_amount || 0), 0)
+    return acc + shopDisbursed
+  }, 0)
 
   return (
     <div className="min-h-screen flex bg-muted/30">
@@ -300,10 +307,7 @@ export function ShopDashboard() {
               <Input placeholder="Search..." className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" />
             </div>
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-600 rounded-full border border-background"></span>
-            </Button>
+            <NotificationsDropdown />
             <div className="flex items-center gap-2 pl-2 border-l border-border">
               <span className="text-sm font-medium text-foreground hidden sm:block">Hello, {profile.name.split(' ')[0]}</span>
               <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center text-sm font-semibold">
@@ -325,27 +329,27 @@ export function ShopDashboard() {
           {/* ─── KPI Cards ─── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { title: "Total Sales", val: `₹${(totalSales).toLocaleString()}`, icon: Wallet, sparkline: sparklineData1, change: "+12.4%" },
-              { title: "Orders", val: totalOrders.toLocaleString(), icon: ShoppingCart, sparkline: sparklineData2, change: "+8.2%" },
-              { title: "Avg. Order Value", val: `₹${avgOrderValue}`, icon: Copy, sparkline: sparklineData3, change: "+3.9%" },
-              { title: "Active Customers", val: totalCustomers.toLocaleString(), icon: Users, sparkline: sparklineData4, change: "+5.7%" },
+              { title: "Disbursed Funds", val: `₹${totalDisbursed.toLocaleString()}`, icon: BadgeDollarSign, sparkline: sparklineData1, change: "+100%", isHighlight: true },
+              { title: "Total Sales", val: `₹${(totalSales).toLocaleString()}`, icon: Wallet, sparkline: sparklineData2, change: "+12.4%", isHighlight: false },
+              { title: "Orders", val: totalOrders.toLocaleString(), icon: ShoppingCart, sparkline: sparklineData3, change: "+8.2%", isHighlight: false },
+              { title: "Active Customers", val: totalCustomers.toLocaleString(), icon: Users, sparkline: sparklineData4, change: "+5.7%", isHighlight: false },
             ].map((kpi, i) => (
-              <Card key={i} className="bg-background border-border shadow-sm rounded-xl overflow-hidden">
+              <Card key={i} className={`border-border shadow-sm rounded-xl overflow-hidden ${kpi.isHighlight ? 'bg-gradient-to-br from-indigo-500 to-indigo-700 text-white border-indigo-600 shadow-indigo-200/50 dark:shadow-none dark:from-indigo-900/50 dark:to-indigo-800/30' : 'bg-background'}`}>
                 <CardContent className="p-5 relative pb-0">
                   <div className="flex justify-between items-start mb-2">
-                    <p className="text-sm font-medium text-foreground">{kpi.title}</p>
-                    <div className="p-1.5 rounded-md bg-muted text-muted-foreground">
+                    <p className={`text-sm font-medium ${kpi.isHighlight ? 'text-indigo-100' : 'text-foreground'}`}>{kpi.title}</p>
+                    <div className={`p-1.5 rounded-md ${kpi.isHighlight ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'}`}>
                       <kpi.icon className="w-4 h-4" />
                     </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-1">{kpi.val}</h3>
-                  <div className="text-xs text-emerald-600 font-medium mb-4">
-                    {kpi.change} <span className="text-muted-foreground font-normal">vs last month</span>
+                  <h3 className={`text-2xl font-bold mb-1 ${kpi.isHighlight ? 'text-white' : 'text-foreground'}`}>{kpi.val}</h3>
+                  <div className={`text-xs font-medium mb-4 ${kpi.isHighlight ? 'text-indigo-200' : 'text-emerald-600'}`}>
+                    {kpi.change} <span className={`font-normal ${kpi.isHighlight ? 'text-indigo-200/70' : 'text-muted-foreground'}`}>vs last month</span>
                   </div>
                   <div className="h-12 w-full absolute bottom-0 left-0 right-0 opacity-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={kpi.sparkline}>
-                        <Line type="monotone" dataKey="v" stroke="#4f46e5" strokeWidth={2} dot={false} isAnimationActive={false} />
+                        <Line type="monotone" dataKey="v" stroke={kpi.isHighlight ? "#ffffff" : "#4f46e5"} strokeWidth={2} dot={false} isAnimationActive={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -395,7 +399,7 @@ export function ShopDashboard() {
                 <CardTitle className="text-base font-semibold">Top Performing Shops</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 mt-2">
-                {shops.slice(0, 4).map((shop, i) => (
+                {shops.slice(0, 4).map((shop) => (
                   <div key={shop.id} className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
                       <Store className="w-5 h-5 text-muted-foreground" />
@@ -443,6 +447,7 @@ export function ShopDashboard() {
                     const statusText = getStatusText(shop)
                     const pendingApp = shop.applications?.find(a => a.status === 'pending_documents' || a.status === 'draft')
                     const activeApp = shop.applications?.find(a => a.status === 'processing' || a.status === 'under_review')
+                    const approvedApp = shop.applications?.find(a => a.status === 'approved')
                     
                     return (
                       <tr key={shop.id} className="hover:bg-muted/10 transition-colors">
@@ -457,7 +462,11 @@ export function ShopDashboard() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">
-                            {pendingApp ? (
+                            {approvedApp ? (
+                              <Button variant="outline" size="sm" className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400" onClick={() => navigate(`/verify-loan/${approvedApp.id}`)}>
+                                PDF
+                              </Button>
+                            ) : pendingApp ? (
                               <Button variant="outline" size="sm" className="h-7 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400" onClick={() => navigate(`/applications/${pendingApp.id}/documents`)}>
                                 Upload
                               </Button>

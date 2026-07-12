@@ -2,13 +2,19 @@ import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Printer, ArrowLeft, ShieldCheck, AlertTriangle, Info, MapPin, Store, Mic, FileText } from "lucide-react"
+import { Printer, ArrowLeft, ShieldCheck, AlertTriangle, MapPin, Store, Mic, FileText, CheckCircle2, XCircle } from "lucide-react"
 import { getApplicationReportApiV1ReportApplicationIdGet, getSecureDocumentUrlApiV1DocumentsDocumentIdUrlGet } from "@/client"
+import { useAuth } from "@/contexts/AuthContext"
+import { updateApplicationStatus } from "@/services/adminService"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import "@/api-client"
 
 export function ApplicationReportView() {
   const { applicationId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  
   const [report, setReport] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -30,6 +36,18 @@ export function ApplicationReportView() {
     fetchReport()
   }, [applicationId])
 
+  const updateStatusMutation = useMutation({
+    mutationFn: (status: string) => updateApplicationStatus(applicationId!, status),
+    onSuccess: () => {
+      alert("Application status updated successfully.")
+      queryClient.invalidateQueries({ queryKey: ["adminApplications"] })
+      navigate(-1)
+    },
+    onError: (err: any) => {
+      alert(`Failed to update status: ${err.message}`)
+    }
+  })
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center print:hidden">
@@ -47,6 +65,7 @@ export function ApplicationReportView() {
   }
 
   const isApproved = report.risk_assessment.recommendation === "APPROVE"
+  const canApprove = user?.role === 'admin' || user?.role === 'loan_officer'
 
   return (
     <div className="bg-muted/10 min-h-screen pb-12 print:bg-white print:pb-0">
@@ -57,9 +76,29 @@ export function ApplicationReportView() {
           <Button variant="ghost" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
-          <div className="flex space-x-4">
-            <Button onClick={handlePrint} variant="premium">
-              <Printer className="mr-2 h-4 w-4" /> Print / Export PDF
+          <div className="flex space-x-3 items-center">
+            {canApprove && (
+              <>
+                <Button 
+                  variant="outline" 
+                  className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+                  onClick={() => updateStatusMutation.mutate("rejected")}
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <XCircle className="mr-2 h-4 w-4" /> Reject Loan
+                </Button>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => updateStatusMutation.mutate("approved")}
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" /> Approve Loan
+                </Button>
+                <div className="h-6 w-px bg-border mx-1"></div>
+              </>
+            )}
+            <Button onClick={handlePrint} variant="secondary">
+              <Printer className="mr-2 h-4 w-4" /> Print PDF
             </Button>
           </div>
         </div>
@@ -185,7 +224,7 @@ export function ApplicationReportView() {
                             path: { document_id: file.id }
                           });
                           if (error) throw new Error("Failed to get secure URL");
-                          window.open(data!.url, "_blank");
+                          window.open((data as any)!.url, "_blank");
                         } catch (err) {
                           alert("Failed to securely load document.");
                         }

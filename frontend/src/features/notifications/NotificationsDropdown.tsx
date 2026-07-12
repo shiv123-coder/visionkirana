@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Bell, Check, Clock, ShieldCheck, FileText, Store, Info, AlertCircle, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { fetchAdminNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "@/services/adminService"
+import { fetchUserNotifications, markUserNotificationAsRead, markAllUserNotificationsAsRead } from "@/services/userService"
 import { useNavigate } from "react-router-dom"
 import { Link } from "react-router-dom"
 
@@ -12,28 +13,30 @@ export function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  
+  const isAdminOrOfficer = user?.role === 'admin' || user?.role === 'loan_officer'
 
   // Fetch notifications from the backend
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ["adminNotifications"],
-    queryFn: () => fetchAdminNotifications(),
+    queryKey: ["notifications", user?.role],
+    queryFn: () => isAdminOrOfficer ? fetchAdminNotifications() : fetchUserNotifications(),
     enabled: !!user,
     refetchInterval: 30000 // Refetch every 30 seconds to simulate realtime
   })
 
   // Mark single as read mutation
   const markAsReadMutation = useMutation({
-    mutationFn: markNotificationAsRead,
+    mutationFn: (id: string) => isAdminOrOfficer ? markNotificationAsRead(id) : markUserNotificationAsRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminNotifications"] })
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.role] })
     }
   })
 
   // Mark all as read mutation
   const markAllAsReadMutation = useMutation({
-    mutationFn: markAllNotificationsAsRead,
+    mutationFn: () => isAdminOrOfficer ? markAllNotificationsAsRead() : markAllUserNotificationsAsRead(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminNotifications"] })
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.role] })
     }
   })
 
@@ -46,14 +49,14 @@ export function NotificationsDropdown() {
     
     // Professional navigation action based on type
     setIsOpen(false)
-    const basePath = user?.role === 'admin' ? '/admin' : '/officer'
+    const basePath = user?.role === 'admin' ? '/admin' : user?.role === 'loan_officer' ? '/officer' : ''
     
-    if (notif.type === "info" || notif.title.includes("Demo Request")) {
+    if (notif.type === "info" || notif.title?.includes("Demo Request")) {
       navigate(`${basePath}/demo-requests`)
     } else if (notif.type === "new_shop_registered") {
       navigate(`${basePath}/shops`)
     } else {
-      navigate(`${basePath}/notifications`)
+      navigate(basePath ? `${basePath}/notifications` : `/notifications`)
     }
   }
 

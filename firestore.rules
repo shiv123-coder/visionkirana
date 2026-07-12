@@ -33,12 +33,21 @@ service cloud.firestore {
       allow read: if isLoanOfficer();
     }
 
+    // Shop validation helper
+    function isValidShop(data) {
+      // Validate that if latitude/longitude are provided, they must be numbers
+      let validLat = !("latitude" in data) || data.latitude == null || data.latitude is number;
+      let validLng = !("longitude" in data) || data.longitude == null || data.longitude is number;
+      return validLat && validLng;
+    }
+
     // Shops Collection
     match /shops/{shopId} {
       // Shop owners can read/write their own shops
       allow read: if isAuthenticated() && (resource.data.owner_id == request.auth.uid || isAdmin() || isLoanOfficer());
-      allow create: if isAuthenticated() && request.resource.data.owner_id == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.owner_id == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.owner_id == request.auth.uid && isValidShop(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.owner_id == request.auth.uid || isAdmin()) && isValidShop(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.owner_id == request.auth.uid || isAdmin());
     }
 
     // Applications Collection
