@@ -54,29 +54,7 @@ interface UserProfile {
   role: string
 }
 
-// Mock Data for Sparklines
-const sparklineData1 = [{v: 10},{v: 15},{v: 12},{v: 25},{v: 18},{v: 30},{v: 28}]
-const sparklineData2 = [{v: 5},{v: 10},{v: 8},{v: 15},{v: 12},{v: 20},{v: 25}]
-const sparklineData3 = [{v: 20},{v: 18},{v: 22},{v: 15},{v: 25},{v: 22},{v: 28}]
-const sparklineData4 = [{v: 30},{v: 25},{v: 35},{v: 40},{v: 38},{v: 45},{v: 50}]
 
-const mainChartData = [
-  { name: 'Sep 1', value: 5000 },
-  { name: 'Sep 8', value: 12000 },
-  { name: 'Sep 15', value: 8000 },
-  { name: 'Sep 22', value: 19000 },
-  { name: 'Sep 29', value: 16000 },
-  { name: 'Oct 6', value: 24000 },
-  { name: 'Oct 13', value: 23000 },
-  { name: 'Oct 20', value: 31000 },
-]
-
-const topProducts = [
-  { name: "Main Street Flagship", type: "Products" },
-  { name: "Downtown Boutique", type: "Products" },
-  { name: "Westside Outlet", type: "Products" },
-  { name: "Northside Store", type: "Products" },
-]
 
 export function ShopDashboard() {
   const { logout } = useAuth()
@@ -250,15 +228,27 @@ export function ShopDashboard() {
   }
 
   const totalSales = shops.reduce((acc, shop) => acc + (shop.monthly_sales || 0), 0)
-  const totalOrders = Math.floor(totalSales / 20) || 1430
+  const totalOrders = Math.floor(totalSales / 20)
 
-  const totalCustomers = Math.floor(totalOrders * 0.6) || 915
+  const totalCustomers = Math.floor(totalOrders * 0.6)
   
   const totalDisbursed = shops.reduce((acc, shop) => {
     const approvedApps = shop.applications?.filter(a => a.status === 'approved') || []
     const shopDisbursed = approvedApps.reduce((sum, app) => sum + (app.requested_amount || 0), 0)
     return acc + shopDisbursed
   }, 0)
+
+  const sparklineData1 = totalDisbursed > 0 ? [{v: 10},{v: 15},{v: 12},{v: 25},{v: 18},{v: 30},{v: 28}] : [{v:0},{v:0}]
+  const sparklineData2 = totalSales > 0 ? [{v: 5},{v: 10},{v: 8},{v: 15},{v: 12},{v: 20},{v: 25}] : [{v:0},{v:0}]
+  const sparklineData3 = totalOrders > 0 ? [{v: 20},{v: 18},{v: 22},{v: 15},{v: 25},{v: 22},{v: 28}] : [{v:0},{v:0}]
+  const sparklineData4 = totalCustomers > 0 ? [{v: 30},{v: 25},{v: 35},{v: 40},{v: 38},{v: 45},{v: 50}] : [{v:0},{v:0}]
+
+  const mainChartData = [
+    { name: 'Week 1', value: totalSales * 0.1 },
+    { name: 'Week 2', value: totalSales * 0.25 },
+    { name: 'Week 3', value: totalSales * 0.2 },
+    { name: 'Week 4', value: totalSales * 0.45 },
+  ]
 
   const renderShopsTable = (limit?: number) => (
     <Card className="bg-background border-border shadow-sm rounded-xl overflow-hidden">
@@ -534,15 +524,12 @@ export function ShopDashboard() {
                     </div>
                   </div>
                 ))}
-                {shops.length === 0 && topProducts.map((p, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-md bg-muted"></div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">{p.type}</p>
-                    </div>
+                {shops.length === 0 && (
+                  <div className="text-center py-6">
+                    <Store className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No shops added yet.</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </div>
