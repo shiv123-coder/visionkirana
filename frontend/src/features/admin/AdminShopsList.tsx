@@ -17,6 +17,7 @@ export function AdminShopsList() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [page, setPage] = useState(0)
+  const [searchQuery, setSearchQuery] = useState("")
   const limit = 50
 
   const { data, isLoading, error } = useQuery({
@@ -94,7 +95,12 @@ export function AdminShopsList() {
           <div className="flex items-center gap-4">
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search shops..." className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" />
+              <Input 
+                placeholder="Search shops..." 
+                className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
             <ThemeToggle />
             <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground">
@@ -128,7 +134,7 @@ export function AdminShopsList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border">
-                  {shops.map((shop: any) => (
+                  {shops.filter((s: any) => (s.shop_name || s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (s.owner_name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (s.city || "").toLowerCase().includes(searchQuery.toLowerCase())).map((shop: any) => (
                     <TableRow key={shop.id} className="hover:bg-muted/10 transition-colors">
                       <TableCell className="font-medium text-foreground">{shop.shop_name || shop.name}</TableCell>
                       <TableCell className="text-muted-foreground">{shop.owner_name}</TableCell>

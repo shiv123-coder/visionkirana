@@ -3,7 +3,7 @@ import { AdminDashboard } from "@/features/dashboard/AdminDashboard"
 import { LoanOfficerDashboard } from "@/features/dashboard/LoanOfficerDashboard"
 import { ShopDashboard } from "@/features/shop/ShopDashboard"
 import { Navigate } from "react-router-dom"
-import { Navbar } from "@/components/layout/Navbar"
+
 
 export function DashboardPage() {
   const { user, isLoading } = useAuth()
@@ -32,10 +32,5 @@ export function DashboardPage() {
     return <ShopDashboard />
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      {renderDashboard()}
-    </div>
-  )
+  return renderDashboard()
 }

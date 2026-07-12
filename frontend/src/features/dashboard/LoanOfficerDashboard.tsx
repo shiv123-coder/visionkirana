@@ -33,6 +33,7 @@ const mainChartData = [
 export function LoanOfficerDashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [searchQuery, setSearchQuery] = useState("")
   
   const { data: stats, isLoading, error } = useQuery<any>({
     queryKey: ['adminDashboardStats'],
@@ -99,7 +100,12 @@ export function LoanOfficerDashboard() {
           <div className="flex items-center gap-4">
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search applications..." className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" />
+              <Input 
+                placeholder="Search applications..." 
+                className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
             <ThemeToggle />
             <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground">

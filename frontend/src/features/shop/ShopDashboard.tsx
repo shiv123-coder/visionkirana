@@ -97,6 +97,8 @@ export function ShopDashboard() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [shopToDelete, setShopToDelete] = useState<number | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [activeTab, setActiveTab] = useState("dashboard")
+  const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -253,6 +255,92 @@ export function ShopDashboard() {
     return acc + shopDisbursed
   }, 0)
 
+  const renderShopsTable = (limit?: number) => (
+    <Card className="bg-background border-border shadow-sm rounded-xl overflow-hidden">
+      <div className="p-5 flex justify-between items-center border-b border-border">
+        <h3 className="text-base font-semibold text-foreground">{limit ? "Recent Shop Locations" : "Shop Locations"}</h3>
+        {limit && (
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white h-8 text-xs rounded-md shadow-sm" onClick={() => setActiveTab("shops")}>
+            View all shops
+          </Button>
+        )}
+      </div>
+      
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="text-xs text-muted-foreground bg-muted/30 uppercase border-b border-border">
+            <tr>
+              <th className="px-6 py-4 font-medium">Location Name</th>
+              <th className="px-6 py-4 font-medium">Address</th>
+              <th className="px-6 py-4 font-medium">Owner</th>
+              <th className="px-6 py-4 font-medium">Total Sales</th>
+              <th className="px-6 py-4 font-medium">Status</th>
+              <th className="px-6 py-4 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {shops
+              .filter(s => s.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) || s.city.toLowerCase().includes(searchQuery.toLowerCase()))
+              .slice(0, limit || undefined)
+              .map((shop) => {
+              const statusText = getStatusText(shop)
+              const pendingApp = shop.applications?.find(a => a.status === 'pending_documents' || a.status === 'draft')
+              const activeApp = shop.applications?.find(a => a.status === 'processing' || a.status === 'under_review')
+              const approvedApp = shop.applications?.find(a => a.status === 'approved')
+              
+              return (
+                <tr key={shop.id} className="hover:bg-muted/10 transition-colors">
+                  <td className="px-6 py-4 font-medium text-foreground">{shop.shop_name}</td>
+                  <td className="px-6 py-4 text-muted-foreground">{shop.city}, {shop.state}</td>
+                  <td className="px-6 py-4 text-muted-foreground">{shop.owner_name}</td>
+                  <td className="px-6 py-4 text-foreground font-medium">₹{(shop.monthly_sales).toLocaleString()}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${getStatusColor(statusText)} uppercase tracking-wider`}>
+                      {statusText}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      {approvedApp ? (
+                        <Button variant="outline" size="sm" className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400" onClick={() => navigate(`/verify-loan/${approvedApp.id}`)}>
+                          PDF
+                        </Button>
+                      ) : pendingApp ? (
+                        <Button variant="outline" size="sm" className="h-7 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400" onClick={() => navigate(`/applications/${pendingApp.id}/documents`)}>
+                          Upload
+                        </Button>
+                      ) : activeApp ? (
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setViewingDocsAppId(activeApp.id.toString())}>
+                          View Docs
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setIsApplyLoanOpen(shop.id)}>
+                          Apply
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => navigate(`/shops/${shop.id}/edit`)}>Edit</Button>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setShopToDelete(shop.id); setIsDeleteOpen(true); }}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+            {shops.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                  <MapPin className="w-8 h-8 mx-auto mb-3 opacity-20" />
+                  No locations added yet. Click "Add Shop" to get started.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  )
+
   return (
     <div className="min-h-screen flex bg-muted/30">
       
@@ -268,25 +356,60 @@ export function ShopDashboard() {
         </div>
         <div className="px-4 py-2 flex-1">
           <nav className="space-y-1">
-            <Button variant="secondary" className="w-full justify-start h-10 font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400">
+            <Button 
+              variant={activeTab === "dashboard" ? "secondary" : "ghost"} 
+              className={`w-full justify-start h-10 font-medium ${activeTab === "dashboard" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setActiveTab("dashboard")}
+            >
               <LayoutDashboard className="w-4 h-4 mr-3" /> Dashboard
             </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+            <Button 
+              variant={activeTab === "shops" ? "secondary" : "ghost"} 
+              className={`w-full justify-start h-10 font-medium ${activeTab === "shops" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setActiveTab("shops")}
+            >
+              <Store className="w-4 h-4 mr-3" /> Shops
+            </Button>
+            <Button 
+              variant={activeTab === "sales" ? "secondary" : "ghost"} 
+              className={`w-full justify-start h-10 font-medium ${activeTab === "sales" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setActiveTab("sales")}
+            >
               <BadgeDollarSign className="w-4 h-4 mr-3" /> Sales
             </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+            <Button 
+              variant={activeTab === "inventory" ? "secondary" : "ghost"} 
+              className={`w-full justify-start h-10 font-medium ${activeTab === "inventory" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setActiveTab("inventory")}
+            >
               <Package className="w-4 h-4 mr-3" /> Inventory
             </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+            <Button 
+              variant={activeTab === "customers" ? "secondary" : "ghost"} 
+              className={`w-full justify-start h-10 font-medium ${activeTab === "customers" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setActiveTab("customers")}
+            >
               <Users className="w-4 h-4 mr-3" /> Customers
             </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+            <Button 
+              variant={activeTab === "marketing" ? "secondary" : "ghost"} 
+              className={`w-full justify-start h-10 font-medium ${activeTab === "marketing" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setActiveTab("marketing")}
+            >
               <Megaphone className="w-4 h-4 mr-3" /> Marketing
             </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+            <Button 
+              variant={activeTab === "reports" ? "secondary" : "ghost"} 
+              className={`w-full justify-start h-10 font-medium ${activeTab === "reports" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setActiveTab("reports")}
+            >
               <BarChart2 className="w-4 h-4 mr-3" /> Reports
             </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground mt-4">
+            <Button 
+              variant={activeTab === "settings" ? "secondary" : "ghost"} 
+              className={`w-full justify-start h-10 font-medium mt-4 ${activeTab === "settings" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setActiveTab("settings")}
+            >
               <Settings className="w-4 h-4 mr-3" /> Settings
             </Button>
           </nav>
@@ -304,7 +427,12 @@ export function ShopDashboard() {
           <div className="flex items-center gap-4">
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search..." className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" />
+              <Input 
+                placeholder="Search shops..." 
+                className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
             <ThemeToggle />
             <NotificationsDropdown />
@@ -318,8 +446,9 @@ export function ShopDashboard() {
         </header>
 
         <div className="p-6 max-w-7xl mx-auto w-full space-y-6">
-          
-          <div className="flex items-center justify-between">
+          {activeTab === "dashboard" ? (
+            <>
+              <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-foreground">Overview</h2>
             <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md h-9 shadow-sm" onClick={() => navigate('/register')}>
               <PlusCircle className="w-4 h-4 mr-2" /> Add Shop
@@ -424,82 +553,37 @@ export function ShopDashboard() {
           </div>
 
           {/* ─── Data Table ─── */}
-          <Card className="bg-background border-border shadow-sm rounded-xl overflow-hidden">
-            <div className="p-5 flex justify-between items-center border-b border-border">
-              <h3 className="text-base font-semibold text-foreground">Shop Locations</h3>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white h-8 text-xs rounded-md shadow-sm">View all shops</Button>
+          {renderShopsTable(3)}
+            </>
+          ) : activeTab === "shops" ? (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Shops & Documents</h2>
+                  <p className="text-sm text-muted-foreground">Manage all your registered shops and their respective applications/documents here.</p>
+                </div>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md h-9 shadow-sm" onClick={() => navigate('/register')}>
+                  <PlusCircle className="w-4 h-4 mr-2" /> Add Shop
+                </Button>
+              </div>
+              {renderShopsTable()}
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground bg-muted/30 uppercase border-b border-border">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Location Name</th>
-                    <th className="px-6 py-4 font-medium">Address</th>
-                    <th className="px-6 py-4 font-medium">Owner</th>
-                    <th className="px-6 py-4 font-medium">Total Sales</th>
-                    <th className="px-6 py-4 font-medium">Status</th>
-                    <th className="px-6 py-4 font-medium text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {shops.map((shop) => {
-                    const statusText = getStatusText(shop)
-                    const pendingApp = shop.applications?.find(a => a.status === 'pending_documents' || a.status === 'draft')
-                    const activeApp = shop.applications?.find(a => a.status === 'processing' || a.status === 'under_review')
-                    const approvedApp = shop.applications?.find(a => a.status === 'approved')
-                    
-                    return (
-                      <tr key={shop.id} className="hover:bg-muted/10 transition-colors">
-                        <td className="px-6 py-4 font-medium text-foreground">{shop.shop_name}</td>
-                        <td className="px-6 py-4 text-muted-foreground">{shop.city}, {shop.state}</td>
-                        <td className="px-6 py-4 text-muted-foreground">{shop.owner_name}</td>
-                        <td className="px-6 py-4 text-foreground font-medium">₹{(shop.monthly_sales).toLocaleString()}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${getStatusColor(statusText)} uppercase tracking-wider`}>
-                            {statusText}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            {approvedApp ? (
-                              <Button variant="outline" size="sm" className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400" onClick={() => navigate(`/verify-loan/${approvedApp.id}`)}>
-                                PDF
-                              </Button>
-                            ) : pendingApp ? (
-                              <Button variant="outline" size="sm" className="h-7 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400" onClick={() => navigate(`/applications/${pendingApp.id}/documents`)}>
-                                Upload
-                              </Button>
-                            ) : activeApp ? (
-                              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setViewingDocsAppId(activeApp.id.toString())}>
-                                View Docs
-                              </Button>
-                            ) : (
-                              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setIsApplyLoanOpen(shop.id)}>
-                                Apply
-                              </Button>
-                            )}
-                            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => navigate(`/shops/${shop.id}/edit`)}>Edit</Button>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setShopToDelete(shop.id); setIsDeleteOpen(true); }}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                  {shops.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                        <MapPin className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                        No locations added yet. Click "Add Shop" to get started.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-24 text-center bg-background rounded-xl border border-border shadow-sm">
+              <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-5 dark:bg-indigo-500/10 dark:text-indigo-400">
+                {activeTab === "sales" && <BadgeDollarSign className="w-8 h-8" />}
+                {activeTab === "inventory" && <Package className="w-8 h-8" />}
+                {activeTab === "customers" && <Users className="w-8 h-8" />}
+                {activeTab === "marketing" && <Megaphone className="w-8 h-8" />}
+                {activeTab === "reports" && <BarChart2 className="w-8 h-8" />}
+                {activeTab === "settings" && <Settings className="w-8 h-8" />}
+              </div>
+              <h2 className="text-2xl font-bold text-foreground capitalize mb-2">{activeTab}</h2>
+              <p className="text-muted-foreground max-w-sm">
+                The {activeTab} section is currently under development. Check back later for updates.
+              </p>
             </div>
-          </Card>
+          )}
         </div>
       </main>
 

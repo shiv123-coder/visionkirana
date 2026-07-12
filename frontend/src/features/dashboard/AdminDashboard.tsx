@@ -37,6 +37,7 @@ const mainChartData = [
 export function AdminDashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [searchQuery, setSearchQuery] = useState("")
   
   const { data: stats, isLoading, error } = useQuery<any>({
     queryKey: ['adminDashboardStats'],
@@ -127,7 +128,12 @@ export function AdminDashboard() {
           <div className="flex items-center gap-4">
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search platform..." className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" />
+              <Input 
+                placeholder="Search platform..." 
+                className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
             <ThemeToggle />
             <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground">
@@ -221,7 +227,7 @@ export function AdminDashboard() {
                 <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 mt-2">
-                {appsResponse?.slice(0, 5).map((app: any) => (
+                {appsResponse?.filter((app: any) => app.id.toString().includes(searchQuery) || (app.status || "").toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5).map((app: any) => (
                   <div key={app.id} className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
                       <Activity className="w-5 h-5 text-muted-foreground" />
