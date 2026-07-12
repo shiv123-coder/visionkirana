@@ -10,14 +10,16 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 import { useAuth } from "@/contexts/AuthContext"
 import { 
   Building2, Users, LayoutDashboard, Settings, Search, Bell, 
-  Activity, ShieldCheck, MapPin, ChevronLeft, ChevronRight, CheckCircle2, XCircle
+  Activity, ShieldCheck, MapPin, ChevronLeft, ChevronRight, CheckCircle2, XCircle, FileSearch
 } from "lucide-react"
+import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
 
 export function AdminShopsList() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [page, setPage] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
+  const [viewingDocsAppId, setViewingDocsAppId] = useState<string | null>(null)
   const limit = 50
 
   const { data, isLoading, error } = useQuery({
@@ -131,6 +133,7 @@ export function AdminShopsList() {
                     <TableHead>City</TableHead>
                     <TableHead>GPS Location</TableHead>
                     <TableHead className="text-right">Monthly Sales</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border">
@@ -154,6 +157,17 @@ export function AdminShopsList() {
                         )}
                       </TableCell>
                       <TableCell className="text-right font-medium text-foreground">₹{shop.monthly_sales?.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        {shop.applications && shop.applications.length > 0 && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setViewingDocsAppId(shop.applications[shop.applications.length - 1].id.toString())}
+                          >
+                            <FileSearch className="w-4 h-4 mr-2" /> View Docs
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {shops.length === 0 && (
@@ -189,6 +203,12 @@ export function AdminShopsList() {
           </Card>
         </div>
       </main>
+
+      <ViewDocumentsModal 
+        applicationId={viewingDocsAppId} 
+        isOpen={!!viewingDocsAppId} 
+        onClose={() => setViewingDocsAppId(null)} 
+      />
     </div>
   )
 }

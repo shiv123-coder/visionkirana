@@ -3,12 +3,14 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchAdminApplications } from "@/services/adminService"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { FileText, Eye, ChevronLeft, ChevronRight } from "lucide-react"
+import { FileText, Eye, ChevronLeft, ChevronRight, FileSearch } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
 
 export function AdminApplicationsList() {
   const [page, setPage] = useState(0)
+  const [viewingDocsAppId, setViewingDocsAppId] = useState<string | null>(null)
   const limit = 50
 
   const { data, isLoading, error } = useQuery({
@@ -81,11 +83,16 @@ export function AdminApplicationsList() {
                       </TableCell>
                       <TableCell>{app.risk_category || "Unassessed"}</TableCell>
                       <TableCell className="text-right">
-                        <Link to={`/applications/${app.id}/report`}>
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4 mr-2" /> View Report
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setViewingDocsAppId(app.id.toString())}>
+                            <FileSearch className="w-4 h-4 mr-2" /> View Docs
                           </Button>
-                        </Link>
+                          <Link to={`/applications/${app.id}/report`}>
+                            <Button variant="outline" size="sm">
+                              <Eye className="w-4 h-4 mr-2" /> View Report
+                            </Button>
+                          </Link>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -113,6 +120,12 @@ export function AdminApplicationsList() {
           </div>
         </CardContent>
       </Card>
+
+      <ViewDocumentsModal 
+        applicationId={viewingDocsAppId} 
+        isOpen={!!viewingDocsAppId} 
+        onClose={() => setViewingDocsAppId(null)} 
+      />
     </div>
   )
 }

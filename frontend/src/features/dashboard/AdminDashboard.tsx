@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchDashboardStats } from "@/services/adminService"
 import { getAllApplicationsApiV1AdminApplicationsGet } from "@/client"
 import { useAuth } from "@/contexts/AuthContext"
+import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
 
 // Mock Data for Sparklines
 const sparklineData1 = [{v: 10},{v: 15},{v: 12},{v: 25},{v: 18},{v: 30},{v: 28}]
@@ -38,6 +39,7 @@ export function AdminDashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
+  const [viewingDocsAppId, setViewingDocsAppId] = useState<string | null>(null)
   
   const { data: stats, isLoading, error } = useQuery<any>({
     queryKey: ['adminDashboardStats'],
@@ -228,14 +230,19 @@ export function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-4 mt-2">
                 {appsResponse?.filter((app: any) => app.id.toString().includes(searchQuery) || (app.status || "").toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5).map((app: any) => (
-                  <div key={app.id} className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
-                      <Activity className="w-5 h-5 text-muted-foreground" />
+                  <div key={app.id} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
+                        <Activity className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground line-clamp-1">App #{app.id} - {app.status}</p>
+                        <p className="text-xs text-muted-foreground">₹{app.requested_amount?.toLocaleString()}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground line-clamp-1">App #{app.id} - {app.status}</p>
-                      <p className="text-xs text-muted-foreground">₹{app.requested_amount?.toLocaleString()}</p>
-                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setViewingDocsAppId(app.id.toString())}>
+                      View Docs
+                    </Button>
                   </div>
                 ))}
               </CardContent>
@@ -244,6 +251,12 @@ export function AdminDashboard() {
 
         </div>
       </main>
+
+      <ViewDocumentsModal 
+        applicationId={viewingDocsAppId} 
+        isOpen={!!viewingDocsAppId} 
+        onClose={() => setViewingDocsAppId(null)} 
+      />
     </div>
   )
 }

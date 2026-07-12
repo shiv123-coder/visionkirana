@@ -18,6 +18,12 @@ import {
 } from 'recharts'
 import { getUserShopsApiV1ShopsGet } from "@/client"
 import { motion, AnimatePresence } from "framer-motion"
+import { useAuth } from "@/contexts/AuthContext"
+import { SalesView } from "./views/SalesView"
+import { InventoryView } from "./views/InventoryView"
+import { CustomersView } from "./views/CustomersView"
+import { MarketingView } from "./views/MarketingView"
+import { ReportsView } from "./views/ReportsView"
 import "@/api-client"
 
 // Interfaces
@@ -75,6 +81,7 @@ const topProducts = [
 ]
 
 export function ShopDashboard() {
+  const { logout } = useAuth()
   const [shops, setShops] = useState<Shop[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -287,6 +294,7 @@ export function ShopDashboard() {
               const pendingApp = shop.applications?.find(a => a.status === 'pending_documents' || a.status === 'draft')
               const activeApp = shop.applications?.find(a => a.status === 'processing' || a.status === 'under_review')
               const approvedApp = shop.applications?.find(a => a.status === 'approved')
+              const latestApp = shop.applications && shop.applications.length > 0 ? shop.applications[shop.applications.length - 1] : null
               
               return (
                 <tr key={shop.id} className="hover:bg-muted/10 transition-colors">
@@ -301,6 +309,11 @@ export function ShopDashboard() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
+                      {latestApp && (
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setViewingDocsAppId(latestApp.id.toString())}>
+                          View Docs
+                        </Button>
+                      )}
                       {approvedApp ? (
                         <Button variant="outline" size="sm" className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400" onClick={() => navigate(`/verify-loan/${approvedApp.id}`)}>
                           PDF
@@ -309,15 +322,11 @@ export function ShopDashboard() {
                         <Button variant="outline" size="sm" className="h-7 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400" onClick={() => navigate(`/applications/${pendingApp.id}/documents`)}>
                           Upload
                         </Button>
-                      ) : activeApp ? (
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setViewingDocsAppId(activeApp.id.toString())}>
-                          View Docs
-                        </Button>
-                      ) : (
+                      ) : !activeApp ? (
                         <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setIsApplyLoanOpen(shop.id)}>
                           Apply
                         </Button>
-                      )}
+                      ) : null}
                       <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => navigate(`/shops/${shop.id}/edit`)}>Edit</Button>
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setShopToDelete(shop.id); setIsDeleteOpen(true); }}>
                         <Trash2 className="w-4 h-4" />
@@ -568,6 +577,92 @@ export function ShopDashboard() {
               </div>
               {renderShopsTable()}
             </div>
+          ) : activeTab === "settings" ? (
+            <div className="space-y-6 max-w-4xl mx-auto">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+                  <p className="text-sm text-muted-foreground">Manage your account settings and preferences.</p>
+                </div>
+              </div>
+              
+              <div className="grid gap-6">
+                <Card className="border-border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Profile Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input id="name" defaultValue={profile.name} onChange={(e) => setProfile({...profile, name: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input id="email" type="email" defaultValue={profile.email} disabled className="bg-muted/50" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input id="phone" defaultValue={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="language">Preferred Language</Label>
+                        <select
+                          id="language"
+                          className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          value={profile.language}
+                          onChange={(e) => setProfile({...profile, language: e.target.value})}
+                        >
+                          <option value="English">English</option>
+                          <option value="Hindi">Hindi</option>
+                          <option value="Marathi">Marathi</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex justify-end pt-4">
+                      <Button onClick={() => alert("Profile updated successfully!")}>Save Changes</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Account Access</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between border-b pb-4">
+                      <div>
+                        <h4 className="font-medium text-sm">Sign Out</h4>
+                        <p className="text-xs text-muted-foreground mt-1">Sign out of your account on this device.</p>
+                      </div>
+                      <Button variant="outline" onClick={logout}>Sign Out</Button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-2">
+                      <div>
+                        <h4 className="font-medium text-sm text-destructive">Delete Account</h4>
+                        <p className="text-xs text-muted-foreground mt-1">Permanently delete your account and all associated data.</p>
+                      </div>
+                      <Button variant="destructive" onClick={() => {
+                        if (window.confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) {
+                          alert("Account deletion request submitted. Support will contact you shortly.");
+                        }
+                      }}>Delete Account</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : activeTab === "sales" ? (
+            <SalesView />
+          ) : activeTab === "inventory" ? (
+            <InventoryView />
+          ) : activeTab === "customers" ? (
+            <CustomersView />
+          ) : activeTab === "marketing" ? (
+            <MarketingView />
+          ) : activeTab === "reports" ? (
+            <ReportsView />
           ) : (
             <div className="flex flex-col items-center justify-center py-24 text-center bg-background rounded-xl border border-border shadow-sm">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-5 dark:bg-indigo-500/10 dark:text-indigo-400">
@@ -576,7 +671,6 @@ export function ShopDashboard() {
                 {activeTab === "customers" && <Users className="w-8 h-8" />}
                 {activeTab === "marketing" && <Megaphone className="w-8 h-8" />}
                 {activeTab === "reports" && <BarChart2 className="w-8 h-8" />}
-                {activeTab === "settings" && <Settings className="w-8 h-8" />}
               </div>
               <h2 className="text-2xl font-bold text-foreground capitalize mb-2">{activeTab}</h2>
               <p className="text-muted-foreground max-w-sm">
