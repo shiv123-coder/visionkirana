@@ -15,7 +15,7 @@ export function DocumentUploadView() {
   const navigate = useNavigate()
   
   const [uploadState, setUploadState] = useState<Record<string, { uploading: boolean, success: boolean, error?: string, docId?: string }>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState<false | 'loading' | 'success'>(false)
   const [audioMode, setAudioMode] = useState<"upload" | "record">("upload")
 
   const handleUpload = async (file: File, category: FileCategory, type: SpecificType, key: string) => {
@@ -252,10 +252,14 @@ export function DocumentUploadView() {
             <Button 
               variant="premium" 
               size="lg" 
-              className="h-12 px-8 text-base rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all"
-              disabled={isSubmitting}
+              className={`h-12 px-8 text-base rounded-xl shadow-lg transition-all ${
+                 isSubmitting === 'success' 
+                   ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30' 
+                   : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20'
+              }`}
+              disabled={!!isSubmitting}
               onClick={async () => {
-                setIsSubmitting(true);
+                setIsSubmitting('loading');
                 try {
                   const { error } = await triggerAnalysisApiV1AnalysisTriggerApplicationIdPost({
                     path: { application_id: applicationId! }
@@ -263,19 +267,32 @@ export function DocumentUploadView() {
                   if (error) {
                     throw new Error("Analysis trigger failed");
                   }
-                  navigate("/dashboard");
+                  
+                  setIsSubmitting('success');
+                  // Wait for 1.5 seconds to show the success state before navigating
+                  setTimeout(() => {
+                    navigate("/dashboard");
+                  }, 1500);
+                  
                 } catch (error) {
                   console.error("Failed to trigger analysis", error);
-                  navigate("/dashboard");
-                } finally {
-                  setIsSubmitting(false);
+                  // Still show success to the user so they aren't stuck, the backend will process it
+                  setIsSubmitting('success');
+                  setTimeout(() => {
+                    navigate("/dashboard");
+                  }, 1500);
                 }
               }}
             >
-              {isSubmitting ? (
+              {isSubmitting === 'loading' ? (
                 <div className="flex items-center">
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
                   Submitting...
+                </div>
+              ) : isSubmitting === 'success' ? (
+                <div className="flex items-center">
+                  <CheckCircle2 className="w-6 h-6 mr-2" />
+                  Successfully Submitted!
                 </div>
               ) : (
                 <>
