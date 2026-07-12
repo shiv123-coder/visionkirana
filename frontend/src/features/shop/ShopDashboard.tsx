@@ -119,7 +119,7 @@ export function ShopDashboard() {
         const newEvidenceCounts: Record<number, {images: number, docs: number, audio: number}> = {}
         
         for (const shop of shopsData) {
-          const latestApp = shop.applications?.[0];
+          const latestApp = shop.applications && shop.applications.length > 0 ? shop.applications[shop.applications.length - 1] : null;
           if (latestApp) {
              try {
                 const docs = await getApplicationDocuments(latestApp.id.toString());
