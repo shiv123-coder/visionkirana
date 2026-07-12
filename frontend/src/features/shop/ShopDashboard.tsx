@@ -10,18 +10,19 @@ import { NotificationsDropdown } from "@/features/notifications/NotificationsDro
 import { 
   PlusCircle, LayoutDashboard, BadgeDollarSign, Package, Users, Megaphone, 
   BarChart2, Settings, Search, ShoppingCart, 
-  Wallet, X, AlertCircle, MapPin, Store, Trash2
+  Wallet, X, AlertCircle, MapPin, Store, Trash2, Image as ImageIcon, FileText, Mic
 } from "lucide-react"
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line
 } from 'recharts'
-import { getUserShopsApiV1ShopsGet } from "@/client"
+import { getUserShopsApiV1ShopsGet, getSecureDocumentUrlApiV1DocumentsDocumentIdUrlGet } from "@/client"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { InventoryView } from "./views/InventoryView"
 import { CustomersView } from "./views/CustomersView"
 import { ReportsView } from "./views/ReportsView"
+import { getApplicationDocuments } from "@/services/uploadService"
 import "@/api-client"
 
 // Interfaces
@@ -59,6 +60,8 @@ interface UserProfile {
 export function ShopDashboard() {
   const { logout } = useAuth()
   const [shops, setShops] = useState<Shop[]>([])
+  const [shopImages, setShopImages] = useState<Record<number, string>>({})
+  const [shopEvidenceCounts, setShopEvidenceCounts] = useState<Record<number, {images: number, docs: number, audio: number}>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [profile, setProfile] = useState<UserProfile>({
@@ -108,7 +111,42 @@ export function ShopDashboard() {
           throw new Error("Failed to load shops")
         }
 
-        setShops(data as any as Shop[])
+        const shopsData = data as any as Shop[];
+        setShops(shopsData)
+        
+        // Fetch evidence for each shop's latest app
+        const newShopImages: Record<number, string> = {}
+        const newEvidenceCounts: Record<number, {images: number, docs: number, audio: number}> = {}
+        
+        for (const shop of shopsData) {
+          const latestApp = shop.applications?.[0];
+          if (latestApp) {
+             try {
+                const docs = await getApplicationDocuments(latestApp.id.toString());
+                let imgs = 0, documents = 0, audios = 0;
+                
+                for (const doc of docs) {
+                  if (doc.category === 'image') imgs++;
+                  else if (doc.category === 'document') documents++;
+                  else if (doc.category === 'audio') audios++;
+                  
+                  // Use first shop_front image as avatar
+                  if (doc.type === 'shop_front' && !newShopImages[shop.id]) {
+                     const urlData = await getSecureDocumentUrlApiV1DocumentsDocumentIdUrlGet({ path: { document_id: doc.id }});
+                     if (urlData.data && (urlData.data as any).url) {
+                        newShopImages[shop.id] = (urlData.data as any).url;
+                     }
+                  }
+                }
+                newEvidenceCounts[shop.id] = { images: imgs, docs: documents, audio: audios };
+             } catch(e) {
+                console.error("Failed to fetch docs for shop", shop.id, e);
+             }
+          }
+        }
+        
+        setShopImages(prev => ({...prev, ...newShopImages}))
+        setShopEvidenceCounts(prev => ({...prev, ...newEvidenceCounts}))
       } catch (err: any) {
         setError(err.message)
       } finally {
@@ -268,6 +306,7 @@ export function ShopDashboard() {
               <th className="px-6 py-4 font-medium">Location Name</th>
               <th className="px-6 py-4 font-medium">Address</th>
               <th className="px-6 py-4 font-medium">Owner</th>
+              <th className="px-6 py-4 font-medium">Evidence</th>
               <th className="px-6 py-4 font-medium">Total Sales</th>
               <th className="px-6 py-4 font-medium">Status</th>
               <th className="px-6 py-4 font-medium text-right">Actions</th>
@@ -286,9 +325,31 @@ export function ShopDashboard() {
               
               return (
                 <tr key={shop.id} className="hover:bg-muted/10 transition-colors">
-                  <td className="px-6 py-4 font-medium text-foreground">{shop.shop_name}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                        {shopImages[shop.id] ? (
+                          <img src={shopImages[shop.id]} alt={shop.shop_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Store className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </div>
+                      <span className="font-medium text-foreground line-clamp-1">{shop.shop_name}</span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 text-muted-foreground">{shop.city}, {shop.state}</td>
                   <td className="px-6 py-4 text-muted-foreground">{shop.owner_name}</td>
+                  <td className="px-6 py-4">
+                    {shopEvidenceCounts[shop.id] ? (
+                      <div className="flex flex-col gap-1 text-xs whitespace-nowrap">
+                        {shopEvidenceCounts[shop.id].images > 0 && <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><ImageIcon className="w-3 h-3"/> {shopEvidenceCounts[shop.id].images} Visuals</span>}
+                        {shopEvidenceCounts[shop.id].docs > 0 && <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><FileText className="w-3 h-3"/> {shopEvidenceCounts[shop.id].docs} Docs</span>}
+                        {shopEvidenceCounts[shop.id].audio > 0 && <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><Mic className="w-3 h-3"/> {shopEvidenceCounts[shop.id].audio} Audio</span>}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-foreground font-medium">₹{(shop.monthly_sales).toLocaleString()}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${getStatusColor(statusText)} uppercase tracking-wider`}>
