@@ -5,20 +5,15 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Package, Search, Plus, AlertCircle, Edit, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
 
-const initialProducts = [
-  { id: "PRD-001", name: "Premium Basmati Rice 5kg", category: "Groceries", stock: 120, price: 450, status: "In Stock" },
-  { id: "PRD-002", name: "Sunflower Oil 1L", category: "Groceries", stock: 15, price: 165, status: "Low Stock" },
-  { id: "PRD-003", name: "Toor Dal 1kg", category: "Pulses", stock: 45, price: 160, status: "In Stock" },
-  { id: "PRD-004", name: "Whole Wheat Atta 10kg", category: "Groceries", stock: 0, price: 380, status: "Out of Stock" },
-  { id: "PRD-005", name: "Sugar 1kg", category: "Groceries", stock: 200, price: 45, status: "In Stock" },
-  { id: "PRD-006", name: "Tata Salt 1kg", category: "Groceries", stock: 80, price: 25, status: "In Stock" },
-  { id: "PRD-007", name: "Maggi Noodles 400g", category: "Snacks", stock: 12, price: 55, status: "Low Stock" },
-]
+type Product = { id: string; name: string; category: string; stock: number; price: number; status: string }
+const initialProducts: Product[] = []
 
 export function InventoryView() {
   const [search, setSearch] = useState("")
-  const [products, setProducts] = useState(initialProducts)
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -41,7 +36,7 @@ export function InventoryView() {
           <h2 className="text-2xl font-bold text-foreground">Inventory Management</h2>
           <p className="text-sm text-muted-foreground">Track your stock levels, pricing, and product categories.</p>
         </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" onClick={() => setIsAddModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" /> Add Product
         </Button>
       </div>
@@ -53,7 +48,7 @@ export function InventoryView() {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Total Products</p>
-            <h4 className="text-2xl font-bold text-foreground">1,248</h4>
+            <h4 className="text-2xl font-bold text-foreground">{products.length}</h4>
           </div>
         </Card>
         <Card className="p-4 flex items-center gap-4 bg-background border-border">
@@ -62,7 +57,7 @@ export function InventoryView() {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Low Stock Items</p>
-            <h4 className="text-2xl font-bold text-foreground">18</h4>
+            <h4 className="text-2xl font-bold text-foreground">{products.filter(p => p.stock > 0 && p.stock < 20).length}</h4>
           </div>
         </Card>
       </div>
@@ -116,10 +111,10 @@ export function InventoryView() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" onClick={() => alert("Edit functionality coming soon")}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setProducts(products.filter(p => p.id !== product.id))}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -137,6 +132,40 @@ export function InventoryView() {
           </Table>
         </div>
       </Card>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background w-full max-w-md p-6 rounded-xl shadow-xl border border-border">
+            <h3 className="text-lg font-bold mb-4">Add Product</h3>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              const stock = parseInt(fd.get('stock') as string);
+              const status = stock > 50 ? 'In Stock' : stock > 0 ? 'Low Stock' : 'Out of Stock';
+              setProducts([...products, {
+                id: `PRD-${Date.now().toString().slice(-4)}`,
+                name: fd.get('name') as string,
+                category: fd.get('category') as string,
+                stock: stock,
+                price: parseFloat(fd.get('price') as string),
+                status
+              }]);
+              setIsAddModalOpen(false);
+            }} className="space-y-4">
+              <div className="space-y-1"><Label>Product Name</Label><Input name="name" required placeholder="e.g. Basmati Rice" /></div>
+              <div className="space-y-1"><Label>Category</Label><Input name="category" required placeholder="e.g. Groceries" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1"><Label>Price (₹)</Label><Input name="price" type="number" required min="0" /></div>
+                <div className="space-y-1"><Label>Initial Stock</Label><Input name="stock" type="number" required min="0" /></div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white">Add Product</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -5,24 +5,24 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Users, Search, Download, Star, MapPin, Phone } from "lucide-react"
 
-const initialCustomers = [
-  { id: "CUST-001", name: "Rahul Sharma", phone: "+91 9876543210", location: "Andheri West", visits: 45, spend: 12500, points: 450 },
-  { id: "CUST-002", name: "Priya Patel", phone: "+91 9876543211", location: "Bandra East", visits: 12, spend: 3400, points: 120 },
-  { id: "CUST-003", name: "Amit Kumar", phone: "+91 9876543212", location: "Andheri West", visits: 89, spend: 45600, points: 1200 },
-  { id: "CUST-004", name: "Sneha Desai", phone: "+91 9876543213", location: "Juhu", visits: 3, spend: 850, points: 30 },
-  { id: "CUST-005", name: "Vikram Singh", phone: "+91 9876543214", location: "Colaba", visits: 24, spend: 8900, points: 240 },
-]
+import { Label } from "@/components/ui/label"
+import { Plus } from "lucide-react"
+
+type Customer = { id: string; name: string; phone: string; location: string; visits: number; spend: number; points: number }
+const initialCustomers: Customer[] = []
 
 export function CustomersView() {
   const [search, setSearch] = useState("")
+  const [customers, setCustomers] = useState<Customer[]>(initialCustomers)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
-  const filteredCustomers = initialCustomers.filter(c => 
+  const filteredCustomers = customers.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) || 
     c.phone.includes(search) ||
     c.location.toLowerCase().includes(search.toLowerCase())
   )
 
-  const topCustomer = initialCustomers.reduce((prev, current) => (prev.spend > current.spend) ? prev : current)
+  const topCustomer = customers.length > 0 ? customers.reduce((prev, current) => (prev.spend > current.spend) ? prev : current) : null
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -31,9 +31,14 @@ export function CustomersView() {
           <h2 className="text-2xl font-bold text-foreground">Customer Relationship</h2>
           <p className="text-sm text-muted-foreground">Manage your customer base and loyalty programs.</p>
         </div>
-        <Button variant="outline" className="shadow-sm">
-          <Download className="w-4 h-4 mr-2" /> Export CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="shadow-sm" onClick={() => alert("Exporting CSV...")}>
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Add Customer
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -44,20 +49,22 @@ export function CustomersView() {
             </div>
             <div>
               <p className="text-sm font-medium text-indigo-100">Total Customers</p>
-              <h3 className="text-3xl font-bold mt-1">1,432</h3>
+              <h3 className="text-3xl font-bold mt-1">{customers.length}</h3>
             </div>
           </div>
         </Card>
         
         <Card className="p-6 bg-background border-border shadow-sm flex flex-col justify-center">
           <p className="text-sm font-medium text-muted-foreground mb-1">Top Customer this month</p>
-          <h3 className="text-xl font-bold text-foreground">{topCustomer.name}</h3>
-          <p className="text-xs text-emerald-600 font-medium mt-1">₹{topCustomer.spend.toLocaleString()} total spend</p>
+          <h3 className="text-xl font-bold text-foreground">{topCustomer ? topCustomer.name : 'N/A'}</h3>
+          <p className="text-xs text-emerald-600 font-medium mt-1">₹{topCustomer ? topCustomer.spend.toLocaleString() : '0'} total spend</p>
         </Card>
 
         <Card className="p-6 bg-background border-border shadow-sm flex flex-col justify-center">
           <p className="text-sm font-medium text-muted-foreground mb-1">Average Visit Frequency</p>
-          <h3 className="text-xl font-bold text-foreground">4.2 times</h3>
+          <h3 className="text-xl font-bold text-foreground">
+            {customers.length > 0 ? (customers.reduce((sum, c) => sum + c.visits, 0) / customers.length).toFixed(1) : '0'} times
+          </h3>
           <p className="text-xs text-muted-foreground mt-1">per month per customer</p>
         </Card>
       </div>
@@ -127,6 +134,37 @@ export function CustomersView() {
           </Table>
         </div>
       </Card>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background w-full max-w-md p-6 rounded-xl shadow-xl border border-border">
+            <h3 className="text-lg font-bold mb-4">Add Customer</h3>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              setCustomers([...customers, {
+                id: `CUST-${Date.now().toString().slice(-4)}`,
+                name: fd.get('name') as string,
+                phone: fd.get('phone') as string,
+                location: fd.get('location') as string,
+                visits: 0,
+                spend: 0,
+                points: 0
+              }]);
+              setIsAddModalOpen(false);
+            }} className="space-y-4">
+              <div className="space-y-1"><Label>Customer Name</Label><Input name="name" required placeholder="e.g. Rahul Sharma" /></div>
+              <div className="space-y-1"><Label>Phone Number</Label><Input name="phone" required placeholder="e.g. +91 9876543210" /></div>
+              <div className="space-y-1"><Label>Location</Label><Input name="location" required placeholder="e.g. Andheri West" /></div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white">Add Customer</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
