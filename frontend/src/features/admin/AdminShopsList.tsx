@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { fetchAdminShops } from "@/services/adminService"
 import { Card } from "@/components/ui/card"
@@ -12,7 +11,6 @@ import {
 import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
 
 export function AdminShopsList() {
-  const navigate = useNavigate()
   const [page, setPage] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const [viewingDocsAppId, setViewingDocsAppId] = useState<string | null>(null)
