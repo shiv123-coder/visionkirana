@@ -3,6 +3,17 @@ import { Button } from "@/components/ui/button"
 import { FileText, Download, Calendar, PieChart } from "lucide-react"
 
 export function ReportsView() {
+  const handleDownload = (filename: string, content: string) => {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.setAttribute("download", filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -19,7 +30,7 @@ export function ReportsView() {
           </div>
           <h3 className="font-bold text-foreground mb-1">Profit & Loss</h3>
           <p className="text-xs text-muted-foreground mb-4">Monthly income vs expenses summary</p>
-          <Button variant="outline" size="sm" className="w-full" onClick={() => alert("Downloading Profit & Loss Statement (PDF)...")}>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => handleDownload("Profit_Loss_Statement.pdf", "Dummy Profit & Loss PDF Data")}>
             <Download className="w-4 h-4 mr-2" /> Download PDF
           </Button>
         </Card>
@@ -30,7 +41,7 @@ export function ReportsView() {
           </div>
           <h3 className="font-bold text-foreground mb-1">Tax Summary</h3>
           <p className="text-xs text-muted-foreground mb-4">GST and local tax calculations</p>
-          <Button variant="outline" size="sm" className="w-full" onClick={() => alert("Downloading Tax Summary (CSV)...")}>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => handleDownload("Tax_Summary.csv", "ID,Tax,Amount\n1,GST,500\n2,Local,100")}>
             <Download className="w-4 h-4 mr-2" /> Download CSV
           </Button>
         </Card>
@@ -41,7 +52,7 @@ export function ReportsView() {
           </div>
           <h3 className="font-bold text-foreground mb-1">Inventory Audit</h3>
           <p className="text-xs text-muted-foreground mb-4">Complete stock level snapshot</p>
-          <Button variant="outline" size="sm" className="w-full" onClick={() => alert("Downloading Inventory Audit (Excel)...")}>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => handleDownload("Inventory_Audit.xlsx", "Dummy Excel Data")}>
             <Download className="w-4 h-4 mr-2" /> Download Excel
           </Button>
         </Card>
@@ -72,7 +83,7 @@ export function ReportsView() {
                   <h4 className="font-medium text-foreground text-sm">{report.name}</h4>
                   <p className="text-xs text-muted-foreground">{report.date} • {report.type}</p>
                 </div>
-                <Button variant="ghost" size="sm" className="h-8 text-indigo-600" onClick={() => alert(`Re-downloading ${report.name}...`)}>
+                <Button variant="ghost" size="sm" className="h-8 text-indigo-600" onClick={() => handleDownload(`${report.name.replace(/\s+/g, '_')}.${report.type.toLowerCase()}`, `Dummy content for ${report.name}`)}>
                   <Download className="w-4 h-4 mr-2" /> Re-download
                 </Button>
               </div>
