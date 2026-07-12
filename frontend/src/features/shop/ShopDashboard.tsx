@@ -19,10 +19,8 @@ import {
 import { getUserShopsApiV1ShopsGet } from "@/client"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
-import { SalesView } from "./views/SalesView"
 import { InventoryView } from "./views/InventoryView"
 import { CustomersView } from "./views/CustomersView"
-import { MarketingView } from "./views/MarketingView"
 import { ReportsView } from "./views/ReportsView"
 import "@/api-client"
 
@@ -379,13 +377,7 @@ export function ShopDashboard() {
             >
               <Store className="w-4 h-4 mr-3" /> Shops
             </Button>
-            <Button 
-              variant={activeTab === "sales" ? "secondary" : "ghost"} 
-              className={`w-full justify-start h-10 font-medium ${activeTab === "sales" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setActiveTab("sales")}
-            >
-              <BadgeDollarSign className="w-4 h-4 mr-3" /> Sales
-            </Button>
+
             <Button 
               variant={activeTab === "inventory" ? "secondary" : "ghost"} 
               className={`w-full justify-start h-10 font-medium ${activeTab === "inventory" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
@@ -400,13 +392,7 @@ export function ShopDashboard() {
             >
               <Users className="w-4 h-4 mr-3" /> Customers
             </Button>
-            <Button 
-              variant={activeTab === "marketing" ? "secondary" : "ghost"} 
-              className={`w-full justify-start h-10 font-medium ${activeTab === "marketing" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setActiveTab("marketing")}
-            >
-              <Megaphone className="w-4 h-4 mr-3" /> Marketing
-            </Button>
+
             <Button 
               variant={activeTab === "reports" ? "secondary" : "ghost"} 
               className={`w-full justify-start h-10 font-medium ${activeTab === "reports" ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground"}`}
@@ -671,23 +657,17 @@ export function ShopDashboard() {
                 </Card>
               </div>
             </div>
-          ) : activeTab === "sales" ? (
-            <SalesView />
           ) : activeTab === "inventory" ? (
             <InventoryView />
           ) : activeTab === "customers" ? (
             <CustomersView />
-          ) : activeTab === "marketing" ? (
-            <MarketingView />
           ) : activeTab === "reports" ? (
             <ReportsView />
           ) : (
             <div className="flex flex-col items-center justify-center py-24 text-center bg-background rounded-xl border border-border shadow-sm">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-5 dark:bg-indigo-500/10 dark:text-indigo-400">
-                {activeTab === "sales" && <BadgeDollarSign className="w-8 h-8" />}
                 {activeTab === "inventory" && <Package className="w-8 h-8" />}
                 {activeTab === "customers" && <Users className="w-8 h-8" />}
-                {activeTab === "marketing" && <Megaphone className="w-8 h-8" />}
                 {activeTab === "reports" && <BarChart2 className="w-8 h-8" />}
               </div>
               <h2 className="text-2xl font-bold text-foreground capitalize mb-2">{activeTab}</h2>

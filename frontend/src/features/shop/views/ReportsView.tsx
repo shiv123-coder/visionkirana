@@ -19,7 +19,7 @@ export function ReportsView() {
           </div>
           <h3 className="font-bold text-foreground mb-1">Profit & Loss</h3>
           <p className="text-xs text-muted-foreground mb-4">Monthly income vs expenses summary</p>
-          <Button variant="outline" size="sm" className="w-full">
+          <Button variant="outline" size="sm" className="w-full" onClick={() => alert("Downloading Profit & Loss Statement (PDF)...")}>
             <Download className="w-4 h-4 mr-2" /> Download PDF
           </Button>
         </Card>
@@ -30,7 +30,7 @@ export function ReportsView() {
           </div>
           <h3 className="font-bold text-foreground mb-1">Tax Summary</h3>
           <p className="text-xs text-muted-foreground mb-4">GST and local tax calculations</p>
-          <Button variant="outline" size="sm" className="w-full">
+          <Button variant="outline" size="sm" className="w-full" onClick={() => alert("Downloading Tax Summary (CSV)...")}>
             <Download className="w-4 h-4 mr-2" /> Download CSV
           </Button>
         </Card>
@@ -41,7 +41,7 @@ export function ReportsView() {
           </div>
           <h3 className="font-bold text-foreground mb-1">Inventory Audit</h3>
           <p className="text-xs text-muted-foreground mb-4">Complete stock level snapshot</p>
-          <Button variant="outline" size="sm" className="w-full">
+          <Button variant="outline" size="sm" className="w-full" onClick={() => alert("Downloading Inventory Audit (Excel)...")}>
             <Download className="w-4 h-4 mr-2" /> Download Excel
           </Button>
         </Card>
@@ -52,7 +52,7 @@ export function ReportsView() {
           </div>
           <h3 className="font-bold text-foreground mb-1">Custom Report</h3>
           <p className="text-xs text-muted-foreground mb-4">Build a report with specific metrics</p>
-          <Button className="w-full bg-indigo-600 text-white hover:bg-indigo-700">
+          <Button className="w-full bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => alert("Opening Custom Report Builder...")}>
             Generate New
           </Button>
         </Card>
@@ -72,7 +72,7 @@ export function ReportsView() {
                   <h4 className="font-medium text-foreground text-sm">{report.name}</h4>
                   <p className="text-xs text-muted-foreground">{report.date} • {report.type}</p>
                 </div>
-                <Button variant="ghost" size="sm" className="h-8 text-indigo-600">
+                <Button variant="ghost" size="sm" className="h-8 text-indigo-600" onClick={() => alert(`Re-downloading ${report.name}...`)}>
                   <Download className="w-4 h-4 mr-2" /> Re-download
                 </Button>
               </div>
