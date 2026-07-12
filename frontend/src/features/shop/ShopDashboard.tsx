@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
-import { PlusCircle, Edit, Store, IndianRupee, TrendingUp, User, X, Sparkles, ChevronRight, Zap, AlertCircle, Trash2, Search, Upload, FileText, MapPin, Clock, BarChart3, Shield, ArrowUpRight, Briefcase } from "lucide-react"
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { 
+  PlusCircle, LayoutDashboard, BadgeDollarSign, Package, Users, Megaphone, 
+  BarChart2, Settings, Search, Bell, Copy, ShoppingCart, 
+  Wallet, TrendingUp, X, AlertCircle, MapPin, Store, Trash2
+} from "lucide-react"
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line
+} from 'recharts'
 import { getUserShopsApiV1ShopsGet } from "@/client"
-import { motion, AnimatePresence, type Variants } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import "@/api-client"
 
+// Interfaces
 interface Application {
   id: number
   status: string
@@ -40,11 +49,34 @@ interface UserProfile {
   role: string
 }
 
+// Mock Data for Sparklines
+const sparklineData1 = [{v: 10},{v: 15},{v: 12},{v: 25},{v: 18},{v: 30},{v: 28}]
+const sparklineData2 = [{v: 5},{v: 10},{v: 8},{v: 15},{v: 12},{v: 20},{v: 25}]
+const sparklineData3 = [{v: 20},{v: 18},{v: 22},{v: 15},{v: 25},{v: 22},{v: 28}]
+const sparklineData4 = [{v: 30},{v: 25},{v: 35},{v: 40},{v: 38},{v: 45},{v: 50}]
+
+const mainChartData = [
+  { name: 'Sep 1', value: 5000 },
+  { name: 'Sep 8', value: 12000 },
+  { name: 'Sep 15', value: 8000 },
+  { name: 'Sep 22', value: 19000 },
+  { name: 'Sep 29', value: 16000 },
+  { name: 'Oct 6', value: 24000 },
+  { name: 'Oct 13', value: 23000 },
+  { name: 'Oct 20', value: 31000 },
+]
+
+const topProducts = [
+  { name: "Main Street Flagship", type: "Products" },
+  { name: "Downtown Boutique", type: "Products" },
+  { name: "Westside Outlet", type: "Products" },
+  { name: "Northside Store", type: "Products" },
+]
+
 export function ShopDashboard() {
   const [shops, setShops] = useState<Shop[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [profile, setProfile] = useState<UserProfile>({
     name: "Kirana Owner",
     email: "owner@visionkirana.com",
@@ -55,72 +87,15 @@ export function ShopDashboard() {
   
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [shopToDelete, setShopToDelete] = useState<number | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
   
   const [isApplyLoanOpen, setIsApplyLoanOpen] = useState<number | null>(null)
   const [applyAmount, setApplyAmount] = useState("")
   const [applyPurpose, setApplyPurpose] = useState("")
   const [isApplying, setIsApplying] = useState(false)
   const [viewingDocsAppId, setViewingDocsAppId] = useState<string | null>(null)
-
-  const handleDeleteShop = async (shopId: number) => {
-    setIsDeleting(true)
-    try {
-      const token = localStorage.getItem("access_token")
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://visionkirana-api.onrender.com"
-      const res = await fetch(`${apiUrl}/api/v1/shops/${shopId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      if (!res.ok) throw new Error("Failed to delete shop")
-      setShops(prev => prev.filter(s => s.id !== shopId))
-    } catch (err: any) {
-      alert(err.message)
-    } finally {
-      setIsDeleting(false)
-      setShopToDelete(null)
-    }
-  }
-
-  const handleApplyLoan = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!isApplyLoanOpen || !applyAmount || !applyPurpose) return
-    
-    setIsApplying(true)
-    try {
-      const token = localStorage.getItem("access_token")
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://visionkirana-api.onrender.com"
-      
-      const res = await fetch(`${apiUrl}/api/v1/shops/${isApplyLoanOpen}/applications`, {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify({
-            requested_amount: parseFloat(applyAmount),
-            purpose: applyPurpose
-        })
-      })
-      
-      if (!res.ok) throw new Error("Failed to create application")
-      
-      const data = await res.json()
-      
-      // Close modal and navigate to document upload
-      setIsApplyLoanOpen(null)
-      setApplyAmount("")
-      setApplyPurpose("")
-      navigate(`/applications/${data.application_id}/documents`)
-      
-    } catch (err: any) {
-      alert(err.message)
-    } finally {
-      setIsApplying(false)
-    }
-  };
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [shopToDelete, setShopToDelete] = useState<number | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -172,632 +147,412 @@ export function ShopDashboard() {
     }
   }, [location.key])
 
-  const handleProfileSave = (e: React.FormEvent) => {
+  const handleApplyLoan = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Mock save logic
-    setIsProfileOpen(false)
+    if (!isApplyLoanOpen || !applyAmount || !applyPurpose) return
+    
+    setIsApplying(true)
+    try {
+      const token = localStorage.getItem("access_token")
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://visionkirana-api.onrender.com"
+      
+      const res = await fetch(`${apiUrl}/api/v1/shops/${isApplyLoanOpen}/applications`, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+            requested_amount: parseFloat(applyAmount),
+            purpose: applyPurpose
+        })
+      })
+      
+      if (!res.ok) throw new Error("Failed to create application")
+      
+      const data = await res.json()
+      
+      setIsApplyLoanOpen(null)
+      setApplyAmount("")
+      setApplyPurpose("")
+      navigate(`/applications/${data.application_id}/documents`)
+      
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setIsApplying(false)
+    }
+  };
+
+  const handleDeleteShop = async () => {
+    if (!shopToDelete) return
+    setIsDeleting(true)
+    try {
+      const token = localStorage.getItem("access_token")
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://visionkirana-api.onrender.com"
+      
+      const res = await fetch(`${apiUrl}/api/v1/shops/${shopToDelete}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      if (!res.ok) throw new Error("Failed to delete shop")
+      
+      setShops(shops.filter(s => s.id !== shopToDelete))
+      setIsDeleteOpen(false)
+      setShopToDelete(null)
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    if (['processing', 'under_review'].includes(status)) return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+    if (['completed', 'approved'].includes(status)) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+    if (status === 'rejected') return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+    return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' // active shop
+  }
+
+  const getStatusText = (shop: Shop) => {
+    const activeApp = shop.applications?.find(a => ['processing', 'under_review', 'pending_documents', 'draft'].includes(a.status))
+    if (activeApp) return activeApp.status.replace(/_/g, ' ')
+    return 'active'
   }
 
   if (loading) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center space-y-4 bg-[#fbfbfe]">
-        <div className="w-10 h-10 border-[3px] border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <p className="text-muted-foreground text-sm font-medium tracking-wide">Loading your workspace...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-3 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center space-y-4 bg-[#fbfbfe]">
-        <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
-          <AlertCircle className="w-6 h-6 text-red-500" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+          <AlertCircle className="w-6 h-6 text-red-600" />
         </div>
-        <div className="text-center space-y-1">
-          <p className="font-semibold text-lg text-slate-900">Unable to load data</p>
-          <p className="text-slate-500 text-sm">{error}</p>
-        </div>
+        <p className="text-lg font-semibold text-foreground mb-2">Error loading dashboard</p>
+        <p className="text-muted-foreground text-sm">{error}</p>
       </div>
     )
   }
 
-  const activeApplications = shops.flatMap(s => s.applications || [])
   const totalSales = shops.reduce((acc, shop) => acc + (shop.monthly_sales || 0), 0)
-  const healthScore = shops.length > 0 ? 85 : 0 
-  const totalYears = shops.reduce((acc, s) => acc + s.years_in_business, 0)
-  const avgYears = shops.length > 0 ? Math.round(totalYears / shops.length) : 0
-
-  // Dynamic Chart Data
-  const chartData = [
-    { month: 'Jan', sales: totalSales * 0.6 },
-    { month: 'Feb', sales: totalSales * 0.75 },
-    { month: 'Mar', sales: totalSales * 0.8 },
-    { month: 'Apr', sales: totalSales * 0.9 },
-    { month: 'May', sales: totalSales || 50000 },
-  ]
-
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
-  }
-
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } }
-  }
-
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return "Good morning"
-    if (hour < 17) return "Good afternoon"
-    return "Good evening"
-  }
-
-  const getStatusConfig = (status: string) => {
-    const configs: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-      processing: { label: "AI Analyzing", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50", dot: "bg-amber-500" },
-      under_review: { label: "Under Review", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50", dot: "bg-blue-500" },
-      completed: { label: "Completed", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50", dot: "bg-emerald-500" },
-      approved: { label: "Approved", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50", dot: "bg-emerald-500" },
-      rejected: { label: "Rejected", color: "text-red-700 dark:text-red-400", bg: "bg-red-50", dot: "bg-red-500" },
-      pending_documents: { label: "Docs Needed", color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-50", dot: "bg-violet-500" },
-      draft: { label: "Draft", color: "text-slate-600", bg: "bg-slate-100", dot: "bg-slate-400" }
-    }
-    return configs[status] || { label: status.replace(/_/g, " "), color: "text-slate-600", bg: "bg-slate-100", dot: "bg-slate-400" }
-  }
+  const totalOrders = Math.floor(totalSales / 20) || 1430
+  const avgOrderValue = totalSales > 0 ? (totalSales / totalOrders).toFixed(2) : "20.10"
+  const totalCustomers = Math.floor(totalOrders * 0.6) || 915
 
   return (
-    <div className="min-h-screen bg-[#fbfbfe] text-slate-900 pb-20 font-sans selection:bg-primary/20">
+    <div className="min-h-screen flex bg-muted/30">
       
-      {/* ─── Minimal Header ─── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      {/* ─── Sidebar ─── */}
+      <aside className="w-[240px] bg-background border-r border-border hidden md:flex flex-col sticky top-0 h-screen">
+        <div className="p-6">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-lg">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
               V
             </div>
-            <span className="font-semibold text-lg tracking-tight text-slate-800">VisionKirana</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={() => setIsProfileOpen(true)} 
-              variant="ghost" 
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 h-9 px-3 rounded-md transition-colors"
-            >
-              <User className="mr-2 h-4 w-4" />
-              <span className="text-sm font-medium">Account</span>
-            </Button>
+            <span className="font-bold text-xl tracking-tight text-foreground">VisionKirana</span>
           </div>
         </div>
-      </header>
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 max-w-7xl">
-        
-        {/* ─── Hero Section ─── */}
-        <motion.div 
-          className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-              {getGreeting()}, {profile.name.split(' ')[0]}
-            </h1>
-            <p className="text-slate-500 text-sm">
-              Here is what's happening with your business today.
-            </p>
-          </div>
-          {shops.length > 0 && (
-            <Button 
-              onClick={() => navigate("/register")} 
-              className="h-10 px-5 rounded-md bg-primary hover:bg-primary/90 text-white shadow-sm transition-all font-medium"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Register New Shop
+        <div className="px-4 py-2 flex-1">
+          <nav className="space-y-1">
+            <Button variant="secondary" className="w-full justify-start h-10 font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400">
+              <LayoutDashboard className="w-4 h-4 mr-3" /> Dashboard
             </Button>
-          )}
-        </motion.div>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+              <BadgeDollarSign className="w-4 h-4 mr-3" /> Sales
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+              <Package className="w-4 h-4 mr-3" /> Inventory
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+              <Users className="w-4 h-4 mr-3" /> Customers
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+              <Megaphone className="w-4 h-4 mr-3" /> Marketing
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground">
+              <BarChart2 className="w-4 h-4 mr-3" /> Reports
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground mt-4">
+              <Settings className="w-4 h-4 mr-3" /> Settings
+            </Button>
+          </nav>
+        </div>
+      </aside>
 
-        {shops.length === 0 ? (
-          /* ─── Empty State ─── */
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
-          >
-            <div className="flex flex-col items-center max-w-lg mx-auto py-24 px-6 text-center">
-              <div className="w-16 h-16 mb-6 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
-                <Store className="w-7 h-7 text-slate-400" />
+      {/* ─── Main Content ─── */}
+      <main className="flex-1 flex flex-col min-w-0">
+        
+        {/* Header */}
+        <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-foreground hidden sm:block">Dashboard</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Search..." className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" />
+            </div>
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-600 rounded-full border border-background"></span>
+            </Button>
+            <div className="flex items-center gap-2 pl-2 border-l border-border">
+              <span className="text-sm font-medium text-foreground hidden sm:block">Hello, {profile.name.split(' ')[0]}</span>
+              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center text-sm font-semibold">
+                {profile.name.substring(0, 2).toUpperCase()}
               </div>
-              <h2 className="text-xl font-semibold mb-2 text-slate-900">No shops registered yet</h2>
-              <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-                Add your first Kirana store to access AI-driven insights, credit scoring, and instant micro-loans tailored to your sales performance.
-              </p>
-              <Button 
-                onClick={() => navigate("/register")} 
-                className="h-10 px-6 text-sm rounded-md bg-primary hover:bg-primary/90 shadow-sm transition-all font-medium"
-              >
-                Register Your Shop
-              </Button>
             </div>
-          </motion.div>
-        ) : (
-          /* ─── Main Dashboard ─── */
-          <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-8">
-            
-            {/* ─── KPI Stats Row ─── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <motion.div variants={itemVariants}>
-                <Card className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden group hover:border-slate-300 transition-colors">
-                  <CardContent className="p-5">
-                    <p className="text-sm font-medium text-slate-500 mb-1 flex justify-between items-center">
-                      Business Health
-                      <Shield className="w-4 h-4 text-emerald-500 opacity-70" />
-                    </p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-semibold text-slate-900">{healthScore}</p>
-                      <span className="text-sm text-slate-500">/ 100</span>
-                    </div>
-                    <div className="mt-3 flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded w-fit">
-                      <TrendingUp className="w-3 h-3 mr-1" />
-                      Healthy
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+          </div>
+        </header>
 
-              <motion.div variants={itemVariants}>
-                <Card className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden group hover:border-slate-300 transition-colors">
-                  <CardContent className="p-5">
-                    <p className="text-sm font-medium text-slate-500 mb-1 flex justify-between items-center">
-                      Total Sales Volume
-                      <IndianRupee className="w-4 h-4 text-primary opacity-70" />
-                    </p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-semibold text-slate-900">{totalSales === 0 ? '₹0' : `₹${(totalSales / 1000).toFixed(0)}k`}</p>
-                    </div>
-                    <div className="mt-3 flex items-center text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded w-fit">
-                      <Zap className="w-3 h-3 mr-1" />
-                      AI Estimated
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+        <div className="p-6 max-w-7xl mx-auto w-full space-y-6">
+          
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground">Overview</h2>
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md h-9 shadow-sm" onClick={() => navigate('/register')}>
+              <PlusCircle className="w-4 h-4 mr-2" /> Add Shop
+            </Button>
+          </div>
 
-              <motion.div variants={itemVariants}>
-                <Card className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden group hover:border-slate-300 transition-colors">
-                  <CardContent className="p-5">
-                    <p className="text-sm font-medium text-slate-500 mb-1 flex justify-between items-center">
-                      Active Loans
-                      <FileText className="w-4 h-4 text-blue-500 opacity-70" />
-                    </p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-semibold text-slate-900">{activeApplications.length}</p>
+          {/* ─── KPI Cards ─── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { title: "Total Sales", val: `₹${(totalSales).toLocaleString()}`, icon: Wallet, sparkline: sparklineData1, change: "+12.4%" },
+              { title: "Orders", val: totalOrders.toLocaleString(), icon: ShoppingCart, sparkline: sparklineData2, change: "+8.2%" },
+              { title: "Avg. Order Value", val: `₹${avgOrderValue}`, icon: Copy, sparkline: sparklineData3, change: "+3.9%" },
+              { title: "Active Customers", val: totalCustomers.toLocaleString(), icon: Users, sparkline: sparklineData4, change: "+5.7%" },
+            ].map((kpi, i) => (
+              <Card key={i} className="bg-background border-border shadow-sm rounded-xl overflow-hidden">
+                <CardContent className="p-5 relative pb-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-sm font-medium text-foreground">{kpi.title}</p>
+                    <div className="p-1.5 rounded-md bg-muted text-muted-foreground">
+                      <kpi.icon className="w-4 h-4" />
                     </div>
-                    <div className="mt-3 flex items-center text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded w-fit">
-                      Across {shops.length} shops
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div variants={itemVariants}>
-                <Card className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden group hover:border-slate-300 transition-colors">
-                  <CardContent className="p-5">
-                    <p className="text-sm font-medium text-slate-500 mb-1 flex justify-between items-center">
-                      Avg. Business Age
-                      <Clock className="w-4 h-4 text-amber-500 opacity-70" />
-                    </p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-semibold text-slate-900">{avgYears}</p>
-                      <span className="text-sm text-slate-500">years</span>
-                    </div>
-                    <div className="mt-3 flex items-center text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded w-fit">
-                      Established
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-
-            {/* ─── Chart Section ─── */}
-            <motion.div variants={itemVariants}>
-              <Card className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
-                <CardHeader className="border-b border-slate-100 py-4 px-6 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base font-semibold text-slate-900">Revenue Overview</CardTitle>
                   </div>
-                  <div className="flex items-center text-xs font-medium text-slate-500">
-                    <BarChart3 className="w-4 h-4 mr-1.5" />
-                    Last 5 Months
+                  <h3 className="text-2xl font-bold text-foreground mb-1">{kpi.val}</h3>
+                  <div className="text-xs text-emerald-600 font-medium mb-4">
+                    {kpi.change} <span className="text-muted-foreground font-normal">vs last month</span>
                   </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="h-[260px] w-full">
+                  <div className="h-12 w-full absolute bottom-0 left-0 right-0 opacity-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15}/>
-                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
-                        <XAxis dataKey="month" tickLine={false} axisLine={false} className="text-xs text-slate-500" dy={10} />
-                        <YAxis tickLine={false} axisLine={false} className="text-xs text-slate-500" tickFormatter={(val) => val === 0 ? '₹0' : `₹${val/1000}k`} />
-                        <Tooltip 
-                          contentStyle={{ 
-                            borderRadius: '8px', 
-                            border: '1px solid #e2e8f0', 
-                            backgroundColor: '#ffffff',
-                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-                            fontSize: '13px',
-                            fontWeight: 500,
-                            color: '#0f172a'
-                          }}
-                          itemStyle={{ color: 'hsl(var(--primary))' }}
-                          formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Sales']}
-                        />
-                        {/* Smooth elegant line with soft fill */}
-                        <Area type="monotone" dataKey="sales" stroke="hsl(var(--primary))" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSales)" activeDot={{ r: 5, strokeWidth: 0, fill: "hsl(var(--primary))" }} />
-                      </AreaChart>
+                      <LineChart data={kpi.sparkline}>
+                        <Line type="monotone" dataKey="v" stroke="#4f46e5" strokeWidth={2} dot={false} isAnimationActive={false} />
+                      </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            ))}
+          </div>
 
-            {/* ─── Shops List ─── */}
-            <motion.div variants={itemVariants} className="pt-4">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <h2 className="text-lg font-semibold text-slate-900">Your Locations</h2>
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input 
-                    placeholder="Search shops..." 
-                    className="pl-9 h-9 text-sm rounded-md bg-white border-slate-200 focus-visible:ring-primary/20 shadow-sm"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+          {/* ─── Chart & Side Panel ─── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Area Chart */}
+            <Card className="lg:col-span-2 bg-background border-border shadow-sm rounded-xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base font-semibold">Sales Overview (Last 30 Days)</CardTitle>
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-md border border-border">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs bg-white dark:bg-slate-800 shadow-sm rounded">Area Chart</Button>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                <AnimatePresence>
-                  {shops.filter(s => s.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) || s.city.toLowerCase().includes(searchQuery.toLowerCase())).map(shop => {
-                      const pendingApp = shop.applications?.find(a => a.status === 'pending_documents' || a.status === 'draft');
-                      const activeApp = shop.applications?.find(a => a.status === 'processing' || a.status === 'under_review');
-                      const completedApp = shop.applications?.find(a => ['completed', 'approved', 'rejected'].includes(a.status));
-
-                      return (
-                        <motion.div 
-                          key={shop.id} 
-                          layout 
-                          initial={{ opacity: 0, scale: 0.98 }} 
-                          animate={{ opacity: 1, scale: 1 }} 
-                          exit={{ opacity: 0, scale: 0.98 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 40 }}
-                        >
-                          <Card className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md transition-all flex flex-col h-full group">
-                            
-                            <div className="p-5 flex-1">
-                              <div className="flex justify-between items-start mb-4">
-                                <div className="space-y-1">
-                                  <h3 className="font-semibold text-slate-900 group-hover:text-primary transition-colors">{shop.shop_name}</h3>
-                                  <div className="flex items-center text-xs text-slate-500">
-                                    <Briefcase className="w-3 h-3 mr-1" />
-                                    {shop.category}
-                                  </div>
-                                </div>
-                                <div className="flex items-center text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
-                                  <MapPin className="w-3 h-3 mr-1 opacity-70" />
-                                  {shop.city}
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-4 py-3 border-y border-slate-100 mb-4">
-                                <div className="flex-1">
-                                  <p className="text-xs text-slate-500 font-medium mb-0.5">Est. Sales</p>
-                                  <p className="font-semibold text-slate-900 text-sm">₹{(shop.monthly_sales / 1000).toFixed(0)}k</p>
-                                </div>
-                                <div className="w-px h-8 bg-slate-100" />
-                                <div className="flex-1 text-center">
-                                  <p className="text-xs text-slate-500 font-medium mb-0.5">Age</p>
-                                  <p className="font-semibold text-slate-900 text-sm">{shop.years_in_business}y</p>
-                                </div>
-                                <div className="w-px h-8 bg-slate-100" />
-                                <div className="flex-1 text-right">
-                                  <p className="text-xs text-slate-500 font-medium mb-0.5">Loans</p>
-                                  <p className="font-semibold text-slate-900 text-sm">{shop.applications?.length || 0}</p>
-                                </div>
-                              </div>
-
-                              {/* Application status badges */}
-                              {shop.applications && shop.applications.length > 0 && (
-                                <div className="space-y-2">
-                                  {shop.applications.slice(0, 2).map((app, idx) => {
-                                    const cfg = getStatusConfig(app.status)
-                                    return (
-                                      <div key={idx} className={`flex items-center justify-between text-xs px-2.5 py-1.5 rounded-md ${cfg.bg}`}>
-                                        <span className={`font-medium ${cfg.color} flex items-center gap-1.5`}>
-                                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${app.status === 'processing' ? 'animate-pulse' : ''}`} />
-                                          {cfg.label}
-                                        </span>
-                                        <span className="font-medium text-slate-600">₹{(app.requested_amount / 1000).toFixed(0)}k</span>
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Actions footer */}
-                            <div className="px-5 py-4 bg-slate-50/50 border-t border-slate-100 mt-auto flex flex-col gap-2">
-                                {pendingApp ? (
-                                    <Button 
-                                      variant="default" 
-                                      className="w-full h-9 text-sm rounded-md bg-primary hover:bg-primary/90 text-white shadow-sm transition-all" 
-                                      onClick={() => navigate(`/applications/${pendingApp.id}/documents`)}
-                                    >
-                                      Upload Evidence
-                                    </Button>
-                                ) : activeApp ? (
-                                    <div className="flex gap-2">
-                                      <Button 
-                                        variant="outline" 
-                                        disabled
-                                        className="flex-1 h-9 text-sm rounded-md border-slate-200 bg-white text-slate-500 font-normal" 
-                                      >
-                                        Processing...
-                                      </Button>
-                                      <Button 
-                                        variant="outline" 
-                                        className="flex-1 h-9 text-sm rounded-md border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors"
-                                        onClick={() => setViewingDocsAppId(activeApp.id.toString())}
-                                      >
-                                        View Uploads
-                                      </Button>
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-2">
-                                      <Button 
-                                        variant="default" 
-                                        className="flex-1 h-9 text-sm rounded-md bg-primary hover:bg-primary/90 text-white shadow-sm transition-all" 
-                                        onClick={() => setIsApplyLoanOpen(shop.id)}
-                                      >
-                                        Apply for Loan
-                                      </Button>
-                                      {completedApp && (
-                                        <Button 
-                                          variant="outline" 
-                                          className="flex-1 h-9 text-sm rounded-md border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors"
-                                          onClick={() => setViewingDocsAppId(completedApp.id.toString())}
-                                        >
-                                          Past Uploads
-                                        </Button>
-                                      )}
-                                    </div>
-                                )}
-                              
-                              <div className="flex gap-2 mt-1">
-                                <Button 
-                                  variant="ghost" 
-                                  className="flex-1 h-8 text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 rounded-md transition-colors" 
-                                  onClick={() => navigate(`/shops/${shop.id}/edit`)}
-                                >
-                                  Edit Shop
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  className="h-8 px-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" 
-                                  onClick={() => setShopToDelete(shop.id)}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              </div>
-                            </div>
-                          </Card>
-                        </motion.div>
-                      )
-                  })}
-                </AnimatePresence>
-                
-                {shops.filter(s => s.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) || s.city.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-                  <div className="col-span-full py-12 flex flex-col items-center justify-center text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                    <Search className="w-8 h-8 text-slate-300 mb-3" />
-                    <h3 className="text-sm font-medium text-slate-900">No shops found</h3>
-                    <p className="text-slate-500 text-xs mt-1">Adjust your search to find what you're looking for.</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </div>
-
-      {/* ─── Profile Slide-out ─── */}
-      <AnimatePresence>
-        {isProfileOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setIsProfileOpen(false)}
-              className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50"
-            />
-            <motion.div 
-              initial={{ x: "100%" }} 
-              animate={{ x: 0 }} 
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col"
-            >
-              <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Account Settings</h2>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[280px] w-full mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={mainChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tickLine={false} axisLine={false} className="text-xs text-muted-foreground" dy={10} />
+                      <YAxis tickLine={false} axisLine={false} className="text-xs text-muted-foreground" tickFormatter={(val) => `₹${val/1000}k`} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Sales']}
+                      />
+                      <Area type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsProfileOpen(false)} className="rounded-full h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-100">
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              <div className="p-6 flex-1 overflow-y-auto">
-                <form id="profile-form" onSubmit={handleProfileSave} className="space-y-6">
-                  
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary font-semibold text-xl">
-                      {profile.name.charAt(0)}
+              </CardContent>
+            </Card>
+
+            {/* Top Products side panel */}
+            <Card className="bg-background border-border shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold">Top Performing Shops</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 mt-2">
+                {shops.slice(0, 4).map((shop, i) => (
+                  <div key={shop.id} className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
+                      <Store className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900">{profile.name}</p>
-                      <p className="text-sm text-slate-500">{profile.email}</p>
+                      <p className="text-sm font-semibold text-foreground line-clamp-1">{shop.shop_name}</p>
+                      <p className="text-xs text-muted-foreground">{shop.category}</p>
                     </div>
                   </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Personal Details</h3>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="name" className="text-xs text-slate-600">Full Name</Label>
-                      <Input 
-                        id="name" 
-                        value={profile.name}
-                        onChange={(e) => setProfile({...profile, name: e.target.value})}
-                        className="h-9 rounded-md bg-white border-slate-200 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="phone" className="text-xs text-slate-600">Phone Number</Label>
-                      <Input 
-                        id="phone" 
-                        value={profile.phone}
-                        onChange={(e) => setProfile({...profile, phone: e.target.value})}
-                        className="h-9 rounded-md bg-white border-slate-200 text-sm"
-                      />
+                ))}
+                {shops.length === 0 && topProducts.map((p, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-md bg-muted"></div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">{p.type}</p>
                     </div>
                   </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
 
-                  <hr className="border-slate-100" />
+          {/* ─── Data Table ─── */}
+          <Card className="bg-background border-border shadow-sm rounded-xl overflow-hidden">
+            <div className="p-5 flex justify-between items-center border-b border-border">
+              <h3 className="text-base font-semibold text-foreground">Shop Locations</h3>
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white h-8 text-xs rounded-md shadow-sm">View all shops</Button>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-muted-foreground bg-muted/30 uppercase border-b border-border">
+                  <tr>
+                    <th className="px-6 py-4 font-medium">Location Name</th>
+                    <th className="px-6 py-4 font-medium">Address</th>
+                    <th className="px-6 py-4 font-medium">Owner</th>
+                    <th className="px-6 py-4 font-medium">Total Sales</th>
+                    <th className="px-6 py-4 font-medium">Status</th>
+                    <th className="px-6 py-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {shops.map((shop) => {
+                    const statusText = getStatusText(shop)
+                    const pendingApp = shop.applications?.find(a => a.status === 'pending_documents' || a.status === 'draft')
+                    const activeApp = shop.applications?.find(a => a.status === 'processing' || a.status === 'under_review')
+                    
+                    return (
+                      <tr key={shop.id} className="hover:bg-muted/10 transition-colors">
+                        <td className="px-6 py-4 font-medium text-foreground">{shop.shop_name}</td>
+                        <td className="px-6 py-4 text-muted-foreground">{shop.city}, {shop.state}</td>
+                        <td className="px-6 py-4 text-muted-foreground">{shop.owner_name}</td>
+                        <td className="px-6 py-4 text-foreground font-medium">₹{(shop.monthly_sales).toLocaleString()}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${getStatusColor(statusText)} uppercase tracking-wider`}>
+                            {statusText}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            {pendingApp ? (
+                              <Button variant="outline" size="sm" className="h-7 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400" onClick={() => navigate(`/applications/${pendingApp.id}/documents`)}>
+                                Upload
+                              </Button>
+                            ) : activeApp ? (
+                              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setViewingDocsAppId(activeApp.id.toString())}>
+                                View Docs
+                              </Button>
+                            ) : (
+                              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setIsApplyLoanOpen(shop.id)}>
+                                Apply
+                              </Button>
+                            )}
+                            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => navigate(`/shops/${shop.id}/edit`)}>Edit</Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setShopToDelete(shop.id); setIsDeleteOpen(true); }}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {shops.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                        <MapPin className="w-8 h-8 mx-auto mb-3 opacity-20" />
+                        No locations added yet. Click "Add Shop" to get started.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      </main>
 
-                  <div className="space-y-4 pb-4">
-                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Security</h3>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="password" className="text-xs text-slate-600">New Password</Label>
-                      <Input 
-                        id="password" 
-                        type="password"
-                        placeholder="••••••••"
-                        className="h-9 rounded-md bg-white border-slate-200 text-sm"
-                      />
-                    </div>
-                  </div>
-                </form>
-              </div>
-              
-              <div className="p-6 border-t border-slate-100 bg-slate-50">
-                <Button type="submit" form="profile-form" className="w-full h-10 rounded-md bg-primary hover:bg-primary/90 text-white shadow-sm transition-all font-medium">
-                  Save Changes
-                </Button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ─── Apply Loan Modal ─── */}
+      {/* ─── Modals ─── */}
       <AnimatePresence>
         {isApplyLoanOpen !== null && (
-          <>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setIsApplyLoanOpen(null)}
-              className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-background w-full max-w-md p-6 rounded-xl shadow-xl border border-border"
             >
-              <motion.div 
-                initial={{ scale: 0.98, opacity: 0, y: 10 }} 
-                animate={{ scale: 1, opacity: 1, y: 0 }} 
-                exit={{ scale: 0.98, opacity: 0, y: 10 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white w-full max-w-md p-6 rounded-xl shadow-xl border border-slate-200"
-              >
-                  <div className="flex justify-between items-start mb-5">
-                      <div>
-                          <h3 className="text-lg font-semibold text-slate-900">Request Loan</h3>
-                          <p className="text-sm text-slate-500 mt-1">Specify amount and purpose.</p>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => setIsApplyLoanOpen(null)} className="rounded-full h-8 w-8 text-slate-400 hover:bg-slate-100 hover:text-slate-900">
-                          <X className="w-4 h-4" />
-                      </Button>
-                  </div>
-                  
-                  <form onSubmit={handleApplyLoan} className="space-y-5">
-                      <div className="space-y-1.5">
-                          <Label htmlFor="applyAmount" className="text-sm font-medium text-slate-700">Amount Required (₹)</Label>
-                          <Input 
-                              id="applyAmount" 
-                              type="number" 
-                              min="1000" 
-                              placeholder="e.g. 50000" 
-                              value={applyAmount}
-                              onChange={(e) => setApplyAmount(e.target.value)}
-                              required
-                              className="h-10 rounded-md border-slate-200"
-                          />
-                      </div>
-                      <div className="space-y-1.5">
-                          <Label htmlFor="applyPurpose" className="text-sm font-medium text-slate-700">Purpose</Label>
-                          <Input 
-                              id="applyPurpose" 
-                              placeholder="e.g. Inventory restocking" 
-                              value={applyPurpose}
-                              onChange={(e) => setApplyPurpose(e.target.value)}
-                              required
-                              className="h-10 rounded-md border-slate-200"
-                          />
-                      </div>
-                      <div className="flex gap-3 justify-end pt-2">
-                          <Button type="button" variant="ghost" onClick={() => setIsApplyLoanOpen(null)} className="h-10 px-4 rounded-md text-slate-600 hover:bg-slate-100 hover:text-slate-900">Cancel</Button>
-                          <Button type="submit" variant="default" className="h-10 px-6 rounded-md bg-primary hover:bg-primary/90 shadow-sm font-medium" disabled={isApplying}>
-                              {isApplying ? "Creating..." : "Continue"}
-                          </Button>
-                      </div>
-                  </form>
-              </motion.div>
+                <div className="flex justify-between items-start mb-5">
+                    <div>
+                        <h3 className="text-lg font-bold text-foreground">Request Loan</h3>
+                        <p className="text-sm text-muted-foreground mt-1">Specify amount and purpose.</p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => setIsApplyLoanOpen(null)} className="rounded-full h-8 w-8 text-muted-foreground">
+                        <X className="w-4 h-4" />
+                    </Button>
+                </div>
+                
+                <form onSubmit={handleApplyLoan} className="space-y-4">
+                    <div className="space-y-1.5">
+                        <Label htmlFor="applyAmount" className="text-sm text-foreground">Amount Required (₹)</Label>
+                        <Input id="applyAmount" type="number" min="1000" placeholder="e.g. 50000" value={applyAmount} onChange={(e) => setApplyAmount(e.target.value)} required />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="applyPurpose" className="text-sm text-foreground">Purpose</Label>
+                        <Input id="applyPurpose" placeholder="e.g. Inventory restocking" value={applyPurpose} onChange={(e) => setApplyPurpose(e.target.value)} required />
+                    </div>
+                    <div className="flex gap-2 justify-end pt-4">
+                        <Button type="button" variant="ghost" onClick={() => setIsApplyLoanOpen(null)}>Cancel</Button>
+                        <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white" disabled={isApplying}>
+                            {isApplying ? "Processing..." : "Continue"}
+                        </Button>
+                    </div>
+                </form>
             </motion.div>
-          </>
+          </div>
         )}
-      </AnimatePresence>
 
-      {/* ─── Delete Confirmation ─── */}
-      <AnimatePresence>
-        {shopToDelete !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={() => !isDeleting && setShopToDelete(null)} />
+        {isDeleteOpen && shopToDelete && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.98, y: 10 }} 
-              animate={{ opacity: 1, scale: 1, y: 0 }} 
-              exit={{ opacity: 0, scale: 0.98, y: 10 }} 
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className="relative z-10 bg-white border border-slate-200 shadow-xl rounded-xl p-6 max-w-sm w-full"
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-background w-full max-w-sm p-6 rounded-xl shadow-xl border border-border text-center"
             >
-              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4 text-red-600 mx-auto">
-                <AlertCircle className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-slate-900 mb-1">Remove Shop?</h3>
-                <p className="text-slate-500 mb-6 text-sm">This action cannot be undone. All data will be permanently removed.</p>
-              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Delete Shop</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Are you sure you want to delete this shop? This action cannot be undone and will remove all associated applications.
+              </p>
               <div className="flex gap-2 justify-center">
-                <Button variant="outline" disabled={isDeleting} onClick={() => setShopToDelete(null)} className="rounded-md px-5 h-9 text-sm border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900">Cancel</Button>
-                <Button variant="destructive" disabled={isDeleting} onClick={() => handleDeleteShop(shopToDelete)} className="rounded-md px-5 h-9 text-sm bg-red-600 hover:bg-red-700">
-                  {isDeleting ? "Removing..." : "Remove"}
+                <Button variant="outline" onClick={() => { setIsDeleteOpen(false); setShopToDelete(null); }}>Cancel</Button>
+                <Button variant="destructive" onClick={handleDeleteShop} disabled={isDeleting}>
+                  {isDeleting ? "Deleting..." : "Delete Shop"}
                 </Button>
               </div>
             </motion.div>
@@ -805,7 +560,6 @@ export function ShopDashboard() {
         )}
       </AnimatePresence>
 
-      {/* ─── View Documents Modal ─── */}
       {viewingDocsAppId && (
         <ViewDocumentsModal 
           applicationId={viewingDocsAppId} 

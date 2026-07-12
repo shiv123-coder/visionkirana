@@ -13,6 +13,8 @@ class Shop(BaseModel):
     category: str
     years_in_business: int
     monthly_sales: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     gst_number: Optional[str] = None
     
     # In Firestore, we generally handle relations by queries, not nested objects

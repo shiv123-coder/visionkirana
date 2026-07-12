@@ -20,6 +20,8 @@ class ShopRegistrationRequest(BaseModel):
     category: str = Field(..., min_length=2, max_length=50)
     years_in_business: int = Field(..., ge=0)
     monthly_sales: float = Field(..., ge=0)
+    latitude: float = Field(..., description="GPS latitude")
+    longitude: float = Field(..., description="GPS longitude")
     
     # Application fields (optional initially, but required for this flow)
     requested_loan: float = Field(..., gt=0)
@@ -35,6 +37,8 @@ class ShopUpdateRequest(BaseModel):
     category: Optional[str] = Field(None, min_length=2, max_length=50)
     years_in_business: Optional[int] = Field(None, ge=0)
     monthly_sales: Optional[float] = Field(None, ge=0)
+    latitude: Optional[float] = Field(None, description="GPS latitude")
+    longitude: Optional[float] = Field(None, description="GPS longitude")
     
     # Optional application update if draft
     requested_loan: Optional[float] = Field(None, gt=0)
@@ -60,6 +64,8 @@ class ShopResponse(BaseModel):
     category: str
     years_in_business: int
     monthly_sales: float
+    latitude: float
+    longitude: float
     
     class Config:
         from_attributes = True

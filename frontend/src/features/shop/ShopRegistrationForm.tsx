@@ -175,7 +175,13 @@ export function ShopRegistrationForm() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="owner_name">Owner Name *</Label>
-                  <Input id="owner_name" {...register("owner_name")} placeholder="Rahul Sharma" />
+                  <Input 
+                    id="owner_name" 
+                    {...register("owner_name")} 
+                    value={user?.displayName || user?.email?.split('@')[0] || ""}
+                    readOnly
+                    className="bg-muted text-muted-foreground cursor-not-allowed"
+                  />
                   {errors.owner_name && <p className="text-sm text-destructive">{errors.owner_name.message}</p>}
                 </div>
 

@@ -1,21 +1,47 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
-import { Users, Building2, TrendingUp, AlertOctagon } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { 
+  Building2, Users, TrendingUp, AlertOctagon, LayoutDashboard, 
+  Settings, Search, Bell, Activity, ShieldCheck, MapPin
+} from "lucide-react"
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+  LineChart, Line
+} from 'recharts'
 import { useQuery } from "@tanstack/react-query"
 import { fetchDashboardStats } from "@/services/adminService"
 import { getAllApplicationsApiV1AdminApplicationsGet } from "@/client"
-import { useState } from "react"
-import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
-import { FileText, Eye } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/AuthContext"
 
-const COLORS = ['#10b981', '#f59e0b', '#f97316', '#ef4444']
+// Mock Data for Sparklines
+const sparklineData1 = [{v: 10},{v: 15},{v: 12},{v: 25},{v: 18},{v: 30},{v: 28}]
+const sparklineData2 = [{v: 5},{v: 10},{v: 8},{v: 15},{v: 12},{v: 20},{v: 25}]
+const sparklineData3 = [{v: 20},{v: 18},{v: 22},{v: 15},{v: 25},{v: 22},{v: 28}]
+const sparklineData4 = [{v: 30},{v: 25},{v: 35},{v: 40},{v: 38},{v: 45},{v: 50}]
+
+const mainChartData = [
+  { name: 'Jan', value: 200000 },
+  { name: 'Feb', value: 450000 },
+  { name: 'Mar', value: 300000 },
+  { name: 'Apr', value: 800000 },
+  { name: 'May', value: 650000 },
+  { name: 'Jun', value: 1200000 },
+  { name: 'Jul', value: 1100000 },
+  { name: 'Aug', value: 1800000 },
+]
 
 export function AdminDashboard() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  
   const { data: stats, isLoading, error } = useQuery<any>({
     queryKey: ['adminDashboardStats'],
     queryFn: fetchDashboardStats,
-    refetchInterval: 5000
+    refetchInterval: 10000
   })
 
   const { data: appsResponse } = useQuery({
@@ -24,25 +50,25 @@ export function AdminDashboard() {
       const { data } = await getAllApplicationsApiV1AdminApplicationsGet()
       return data || []
     },
-    refetchInterval: 10000
+    refetchInterval: 15000
   })
-
-  const [viewingDocsAppId, setViewingDocsAppId] = useState<string | null>(null)
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 space-y-8 flex items-center justify-center min-h-[500px]">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-3 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></div>
       </div>
     )
   }
 
   if (error || !stats) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
-          Failed to load dashboard statistics.
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+          <AlertOctagon className="w-6 h-6 text-red-600" />
         </div>
+        <p className="text-lg font-semibold text-foreground mb-2">Error loading dashboard</p>
+        <p className="text-muted-foreground text-sm">Failed to load statistics.</p>
       </div>
     )
   }
@@ -53,202 +79,165 @@ export function AdminDashboard() {
     return `₹${amount.toLocaleString()}`
   }
 
-  const growthData = stats.growth_data?.length > 0 ? stats.growth_data : [
-    { name: 'Jan', applications: 0, disbursed: 0 }
-  ]
-  
-  const riskData = stats.risk_data?.length > 0 ? stats.risk_data : [
-    { name: 'No Data', value: 1 }
-  ]
-
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin Overview</h1>
-        <p className="text-muted-foreground mt-2">System-wide platform analytics and risk distribution.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Shops</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total_shops}</div>
-            <p className="text-xs text-muted-foreground">Registered on platform</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total_applications}</div>
-            <p className="text-xs text-muted-foreground">Loan applications</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Disbursed</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.total_disbursed)}</div>
-            <p className="text-xs text-muted-foreground">Approved amount</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">High Risk Flagged</CardTitle>
-            <AlertOctagon className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{stats.high_risk_flagged}</div>
-            <p className="text-xs text-muted-foreground">Requires manual review</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Platform Growth</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={growthData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorDisb" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-                  <XAxis dataKey="name" className="text-xs" tickLine={false} axisLine={false} />
-                  <YAxis className="text-xs" tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }} />
-                  <Area type="monotone" dataKey="applications" stroke="#3b82f6" fillOpacity={1} fill="url(#colorApps)" />
-                  <Area type="monotone" dataKey="disbursed" stroke="#10b981" fillOpacity={1} fill="url(#colorDisb)" />
-                </AreaChart>
-              </ResponsiveContainer>
+    <div className="min-h-screen flex bg-muted/30">
+      
+      {/* ─── Sidebar ─── */}
+      <aside className="w-[240px] bg-background border-r border-border hidden md:flex flex-col sticky top-0 h-screen">
+        <div className="p-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+              V
             </div>
-          </CardContent>
-        </Card>
+            <span className="font-bold text-xl tracking-tight text-foreground">VisionKirana</span>
+          </div>
+        </div>
+        <div className="px-4 py-2 flex-1">
+          <nav className="space-y-1">
+            <Button variant="secondary" className="w-full justify-start h-10 font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400">
+              <LayoutDashboard className="w-4 h-4 mr-3" /> Dashboard
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground" onClick={() => navigate('/admin/shops')}>
+              <Building2 className="w-4 h-4 mr-3" /> All Shops
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground" onClick={() => navigate('/admin/applications')}>
+              <Activity className="w-4 h-4 mr-3" /> Applications
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground" onClick={() => navigate('/admin/users')}>
+              <Users className="w-4 h-4 mr-3" /> Users Directory
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground" onClick={() => navigate('/admin/audit-logs')}>
+              <ShieldCheck className="w-4 h-4 mr-3" /> Audit Logs
+            </Button>
+            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground mt-4">
+              <Settings className="w-4 h-4 mr-3" /> System Settings
+            </Button>
+          </nav>
+        </div>
+      </aside>
 
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Risk Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={riskData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={80}
-                    outerRadius={120}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {riskData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }} />
-                  <Legend verticalAlign="bottom" height={36}/>
-                </PieChart>
-              </ResponsiveContainer>
+      {/* ─── Main Content ─── */}
+      <main className="flex-1 flex flex-col min-w-0">
+        
+        {/* Header */}
+        <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-foreground hidden sm:block">Admin Overview</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Search platform..." className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Applications</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
-                  <tr>
-                    <th className="px-4 py-3 rounded-tl-lg">ID</th>
-                    <th className="px-4 py-3">Amount</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3 rounded-tr-lg text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(appsResponse as any[])?.slice(0, 10).map((app: any, idx: number) => (
-                    <tr key={app.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3 font-mono">{app.id.substring(0, 8)}</td>
-                      <td className="px-4 py-3 font-medium">₹{app.requested_amount?.toLocaleString() || 0}</td>
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold capitalize">
-                          {app.status?.replace(/_/g, ' ')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">
-                        {app.created_at ? new Date(app.created_at).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setViewingDocsAppId(app.id)}
-                            className="h-8 text-xs text-indigo-500 border-indigo-500/20 hover:bg-indigo-500/10"
-                          >
-                            <FileText className="w-3.5 h-3.5 mr-1" />
-                            Uploads
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="h-8 text-xs"
-                            onClick={() => window.open(`/officer/applications/${app.id}/report`, "_blank")}
-                          >
-                            <Eye className="w-3.5 h-3.5 mr-1" />
-                            Report
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {(!appsResponse || (appsResponse as any[]).length === 0) && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                        No applications found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground">
+              <Bell className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-2 pl-2 border-l border-border">
+              <span className="text-sm font-medium text-foreground hidden sm:block">{user?.displayName || "Admin User"}</span>
+              <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-sm font-semibold">
+                AD
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </header>
 
-      {/* View Documents Modal */}
-      {viewingDocsAppId && (
-        <ViewDocumentsModal 
-          applicationId={viewingDocsAppId} 
-          isOpen={!!viewingDocsAppId} 
-          onClose={() => setViewingDocsAppId(null)} 
-        />
-      )}
+        <div className="p-6 max-w-7xl mx-auto w-full space-y-6">
+          
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground">System Analytics</h2>
+          </div>
+
+          {/* ─── KPI Cards ─── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { title: "Total Shops", val: stats.total_shops, icon: Building2, sparkline: sparklineData1, change: "+12.4%" },
+              { title: "Total Applications", val: stats.total_applications, icon: Activity, sparkline: sparklineData2, change: "+8.2%" },
+              { title: "Total Disbursed", val: formatCurrency(stats.total_disbursed), icon: TrendingUp, sparkline: sparklineData3, change: "+3.9%" },
+              { title: "Risk Alerts", val: stats.high_risk_shops || 0, icon: AlertOctagon, sparkline: sparklineData4, change: "-1.2%" },
+            ].map((kpi, i) => (
+              <Card key={i} className="bg-background border-border shadow-sm rounded-xl overflow-hidden">
+                <CardContent className="p-5 relative pb-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-sm font-medium text-foreground">{kpi.title}</p>
+                    <div className="p-1.5 rounded-md bg-muted text-muted-foreground">
+                      <kpi.icon className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-1">{kpi.val}</h3>
+                  <div className={`text-xs font-medium mb-4 ${kpi.title === "Risk Alerts" ? 'text-emerald-600' : 'text-emerald-600'}`}>
+                    {kpi.change} <span className="text-muted-foreground font-normal">vs last month</span>
+                  </div>
+                  <div className="h-12 w-full absolute bottom-0 left-0 right-0 opacity-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={kpi.sparkline}>
+                        <Line type="monotone" dataKey="v" stroke={kpi.title === "Risk Alerts" ? "#ef4444" : "#4f46e5"} strokeWidth={2} dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* ─── Chart & Side Panel ─── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Area Chart */}
+            <Card className="lg:col-span-2 bg-background border-border shadow-sm rounded-xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base font-semibold">Disbursement Overview (YTD)</CardTitle>
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-md border border-border">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs bg-white dark:bg-slate-800 shadow-sm rounded">Area Chart</Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[280px] w-full mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={mainChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tickLine={false} axisLine={false} className="text-xs text-muted-foreground" dy={10} />
+                      <YAxis tickLine={false} axisLine={false} className="text-xs text-muted-foreground" tickFormatter={(val) => `₹${val/1000}k`} />
+                      <RechartsTooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Disbursed']}
+                      />
+                      <Area type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Platform Activity side panel */}
+            <Card className="bg-background border-border shadow-sm rounded-xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 mt-2">
+                {appsResponse?.slice(0, 5).map((app: any) => (
+                  <div key={app.id} className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
+                      <Activity className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground line-clamp-1">App #{app.id} - {app.status}</p>
+                      <p className="text-xs text-muted-foreground">₹{app.requested_amount?.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+        </div>
+      </main>
     </div>
   )
 }
