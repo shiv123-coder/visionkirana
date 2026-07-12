@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchAdminShops } from "@/services/adminService"
 import { Card } from "@/components/ui/card"
@@ -6,9 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
-  MapPin, ChevronLeft, ChevronRight, XCircle, FileSearch, Search
+  MapPin, ChevronLeft, ChevronRight, XCircle, FileSearch, Search, Store, Image as ImageIcon, FileText, Mic
 } from "lucide-react"
 import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
+import { getApplicationDocuments } from "@/services/uploadService"
+import { getSecureDocumentUrlApiV1DocumentsDocumentIdUrlGet } from "@/client"
 
 export function AdminShopsList() {
   const [page, setPage] = useState(0)
@@ -22,6 +24,47 @@ export function AdminShopsList() {
     refetchInterval: 5000
   })
   const shops = (data as any[]) || []
+
+  const [shopImages, setShopImages] = useState<Record<number, string>>({})
+  const [shopEvidenceCounts, setShopEvidenceCounts] = useState<Record<number, {images: number, docs: number, audio: number}>>({})
+
+  useEffect(() => {
+    if (!shops || shops.length === 0) return;
+    const fetchDocs = async () => {
+      const newShopImages: Record<number, string> = {}
+      const newEvidenceCounts: Record<number, {images: number, docs: number, audio: number}> = {}
+      
+      for (const shop of shops) {
+        const applications = shop.applications || []
+        const latestApp = applications.length > 0 ? applications[applications.length - 1] : null;
+        if (latestApp && !shopEvidenceCounts[shop.id]) {
+          try {
+            const docs = await getApplicationDocuments(latestApp.id.toString());
+            let imgs = 0, documents = 0, audios = 0;
+            
+            for (const doc of docs) {
+              if (doc.category === 'image') imgs++;
+              else if (doc.category === 'document') documents++;
+              else if (doc.category === 'audio') audios++;
+              
+              if (doc.type === 'shop_front' && !newShopImages[shop.id]) {
+                 const urlData = await getSecureDocumentUrlApiV1DocumentsDocumentIdUrlGet({ path: { document_id: doc.id }});
+                 if (urlData.data && (urlData.data as any).url) {
+                    newShopImages[shop.id] = (urlData.data as any).url;
+                 }
+              }
+            }
+            newEvidenceCounts[shop.id] = { images: imgs, docs: documents, audio: audios };
+          } catch(e) {}
+        }
+      }
+      if (Object.keys(newEvidenceCounts).length > 0) {
+        setShopImages(prev => ({...prev, ...newShopImages}))
+        setShopEvidenceCounts(prev => ({...prev, ...newEvidenceCounts}))
+      }
+    }
+    fetchDocs()
+  }, [shops])
 
   if (isLoading) {
     return (
@@ -65,11 +108,12 @@ export function AdminShopsList() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead>Shop Name</TableHead>
+                  <TableHead>Location Name</TableHead>
                   <TableHead>Owner</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>City</TableHead>
                   <TableHead>GPS Location</TableHead>
+                  <TableHead>Evidence</TableHead>
                   <TableHead className="text-right">Monthly Sales</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -77,7 +121,18 @@ export function AdminShopsList() {
               <TableBody className="divide-y divide-border">
                 {shops.filter((s: any) => (s.shop_name || s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (s.owner_name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (s.city || "").toLowerCase().includes(searchQuery.toLowerCase())).map((shop: any) => (
                   <TableRow key={shop.id} className="hover:bg-muted/10 transition-colors">
-                    <TableCell className="font-medium text-foreground">{shop.shop_name || shop.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                          {shopImages[shop.id] ? (
+                            <img src={shopImages[shop.id]} alt={shop.shop_name || shop.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Store className="w-5 h-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <span className="font-medium text-foreground line-clamp-1">{shop.shop_name || shop.name}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{shop.owner_name}</TableCell>
                     <TableCell className="text-muted-foreground">{shop.category}</TableCell>
                     <TableCell className="text-muted-foreground">{shop.city}</TableCell>
@@ -92,6 +147,17 @@ export function AdminShopsList() {
                           <MapPin className="w-3 h-3 mr-1 opacity-50" />
                           No Data
                         </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {shopEvidenceCounts[shop.id] ? (
+                        <div className="flex flex-col gap-1 text-xs whitespace-nowrap">
+                          {shopEvidenceCounts[shop.id].images > 0 && <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><ImageIcon className="w-3 h-3"/> {shopEvidenceCounts[shop.id].images} Visuals</span>}
+                          {shopEvidenceCounts[shop.id].docs > 0 && <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><FileText className="w-3 h-3"/> {shopEvidenceCounts[shop.id].docs} Docs</span>}
+                          {shopEvidenceCounts[shop.id].audio > 0 && <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><Mic className="w-3 h-3"/> {shopEvidenceCounts[shop.id].audio} Audio</span>}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right font-medium text-foreground">₹{shop.monthly_sales?.toLocaleString()}</TableCell>

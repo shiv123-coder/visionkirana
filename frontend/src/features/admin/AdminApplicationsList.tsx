@@ -1,12 +1,13 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchAdminApplications } from "@/services/adminService"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { FileText, Eye, ChevronLeft, ChevronRight, FileSearch } from "lucide-react"
+import { FileText, Eye, ChevronLeft, ChevronRight, FileSearch, Image as ImageIcon, Mic } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
+import { getApplicationDocuments } from "@/services/uploadService"
 
 export function AdminApplicationsList() {
   const [page, setPage] = useState(0)
@@ -19,6 +20,35 @@ export function AdminApplicationsList() {
     refetchInterval: 5000
   })
   const applications = (data as any[]) || []
+
+  const [appEvidenceCounts, setAppEvidenceCounts] = useState<Record<number, {images: number, docs: number, audio: number}>>({})
+
+  useEffect(() => {
+    if (!applications || applications.length === 0) return;
+    const fetchDocs = async () => {
+      const newEvidenceCounts: Record<number, {images: number, docs: number, audio: number}> = {}
+      
+      for (const app of applications) {
+        if (!appEvidenceCounts[app.id]) {
+          try {
+            const docs = await getApplicationDocuments(app.id.toString());
+            let imgs = 0, documents = 0, audios = 0;
+            
+            for (const doc of docs) {
+              if (doc.category === 'image') imgs++;
+              else if (doc.category === 'document') documents++;
+              else if (doc.category === 'audio') audios++;
+            }
+            newEvidenceCounts[app.id] = { images: imgs, docs: documents, audio: audios };
+          } catch(e) {}
+        }
+      }
+      if (Object.keys(newEvidenceCounts).length > 0) {
+        setAppEvidenceCounts(prev => ({...prev, ...newEvidenceCounts}))
+      }
+    }
+    fetchDocs()
+  }, [applications])
 
   if (isLoading) {
     return (
@@ -63,6 +93,7 @@ export function AdminApplicationsList() {
                     <TableHead>Requested Amount</TableHead>
                     <TableHead>Purpose</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Evidence</TableHead>
                     <TableHead>Risk Category</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
@@ -80,6 +111,17 @@ export function AdminApplicationsList() {
                         }`}>
                           {app.status?.replace("_", " ").toUpperCase() || "PENDING"}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {appEvidenceCounts[app.id] ? (
+                          <div className="flex flex-col gap-1 text-xs whitespace-nowrap">
+                            {appEvidenceCounts[app.id].images > 0 && <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><ImageIcon className="w-3 h-3"/> {appEvidenceCounts[app.id].images} Visuals</span>}
+                            {appEvidenceCounts[app.id].docs > 0 && <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><FileText className="w-3 h-3"/> {appEvidenceCounts[app.id].docs} Docs</span>}
+                            {appEvidenceCounts[app.id].audio > 0 && <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><Mic className="w-3 h-3"/> {appEvidenceCounts[app.id].audio} Audio</span>}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell>{app.risk_category || "Unassessed"}</TableCell>
                       <TableCell className="text-right">
