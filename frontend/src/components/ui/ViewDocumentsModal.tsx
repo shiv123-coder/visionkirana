@@ -64,64 +64,65 @@ export function ViewDocumentsModal({ applicationId, isOpen, onClose }: ViewDocum
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm" 
+            className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" 
             onClick={onClose} 
           />
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+            initial={{ opacity: 0, scale: 0.98, y: 10 }} 
             animate={{ opacity: 1, scale: 1, y: 0 }} 
-            exit={{ opacity: 0, scale: 0.95, y: 20 }} 
-            className="relative z-10 w-full max-w-2xl bg-card border border-border shadow-2xl rounded-2xl overflow-hidden"
+            exit={{ opacity: 0, scale: 0.98, y: 10 }} 
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="relative z-10 w-full max-w-2xl bg-white border border-slate-200 shadow-xl rounded-xl overflow-hidden"
           >
-            <div className="flex items-center justify-between p-6 border-b border-border/50 bg-muted/20">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
               <div>
-                <h3 className="text-xl font-bold">Application Documents</h3>
-                <p className="text-sm text-muted-foreground mt-1">Files uploaded for application #{applicationId.substring(0, 8)}</p>
+                <h3 className="text-lg font-semibold text-slate-900">Application Documents</h3>
+                <p className="text-sm text-slate-500 mt-1">Files uploaded for application #{applicationId.substring(0, 8)}</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors">
-                <X className="w-5 h-5" />
+              <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full h-8 w-8 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+                <X className="w-4 h-4" />
               </Button>
             </div>
             
-            <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                  <p className="text-sm text-muted-foreground">Loading documents...</p>
+                  <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+                  <p className="text-sm text-slate-500 font-medium tracking-wide">Loading documents...</p>
                 </div>
               ) : error ? (
-                <div className="text-center py-8 text-destructive bg-destructive/10 rounded-lg p-4">
+                <div className="text-center py-8 text-red-600 bg-red-50 rounded-lg p-4 font-medium text-sm">
                   {error}
                 </div>
               ) : documents.length === 0 ? (
-                <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-xl bg-muted/10">
-                  <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                  <h4 className="text-lg font-medium text-foreground">No documents found</h4>
-                  <p className="text-sm text-muted-foreground mt-1">This application doesn't have any uploaded files yet.</p>
+                <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                  <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <h4 className="text-sm font-semibold text-slate-900">No documents found</h4>
+                  <p className="text-xs text-slate-500 mt-1">This application doesn't have any uploaded files yet.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {documents.map(doc => (
                     <div 
                       key={doc.id} 
-                      className="group flex flex-col p-4 rounded-xl border border-border/50 bg-background hover:bg-muted/30 hover:border-primary/30 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      className="group flex flex-col p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-sm hover:shadow-md"
                       onClick={() => handleOpenDocument(doc.id)}
                     >
                       <div className="flex items-start justify-between mb-3">
-                        <div className="p-2.5 rounded-lg bg-muted group-hover:bg-background transition-colors shadow-sm">
+                        <div className="p-2.5 rounded-lg bg-slate-100 group-hover:bg-white transition-colors shadow-sm">
                           {getIcon(doc.category)}
                         </div>
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
+                        <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-slate-100 text-slate-600 uppercase tracking-wider">
                           {doc.category}
                         </span>
                       </div>
                       <div className="space-y-1">
-                        <h4 className="font-semibold text-sm capitalize line-clamp-1">{doc.type.replace(/_/g, " ")}</h4>
-                        <p className="text-xs text-muted-foreground">
+                        <h4 className="font-semibold text-sm text-slate-900 capitalize line-clamp-1">{doc.type.replace(/_/g, " ")}</h4>
+                        <p className="text-xs font-medium text-slate-500">
                           {new Date(doc.uploaded_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className="mt-4 pt-3 border-t border-border/50 text-xs font-medium text-primary flex items-center opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+                      <div className="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-primary flex items-center opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-1 group-hover:translate-y-0">
                         View Secure File &rarr;
                       </div>
                     </div>
@@ -130,8 +131,8 @@ export function ViewDocumentsModal({ applicationId, isOpen, onClose }: ViewDocum
               )}
             </div>
             
-            <div className="p-4 border-t border-border/50 bg-muted/20 flex justify-end">
-              <Button onClick={onClose} variant="secondary">Close Window</Button>
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <Button onClick={onClose} variant="outline" className="h-9 px-4 text-sm rounded-md border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900">Close Window</Button>
             </div>
           </motion.div>
         </div>
