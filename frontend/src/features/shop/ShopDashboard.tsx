@@ -643,9 +643,27 @@ export function ShopDashboard() {
                         <h4 className="font-medium text-sm text-destructive">Delete Account</h4>
                         <p className="text-xs text-muted-foreground mt-1">Permanently delete your account and all associated data.</p>
                       </div>
-                      <Button variant="destructive" onClick={() => {
+                      <Button variant="destructive" onClick={async () => {
                         if (window.confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) {
-                          alert("Account deletion request submitted. Support will contact you shortly.");
+                          try {
+                            const token = localStorage.getItem("access_token")
+                            const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://visionkirana-api.onrender.com"
+                            
+                            const res = await fetch(`${apiUrl}/api/v1/users/me`, {
+                              method: 'DELETE',
+                              headers: { 'Authorization': `Bearer ${token}` }
+                            })
+                            
+                            if (!res.ok) {
+                              const errorData = await res.json().catch(() => ({}));
+                              throw new Error(errorData.detail || "Failed to delete account");
+                            }
+                            
+                            alert("Account successfully deleted.");
+                            logout();
+                          } catch (err: any) {
+                            alert(err.message);
+                          }
                         }
                       }}>Delete Account</Button>
                     </div>

@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { 
-  Building2, Users, TrendingUp, AlertOctagon, LayoutDashboard, 
-  Settings, Search, Bell, Activity, ShieldCheck
+  Building2, TrendingUp, AlertOctagon, Activity 
 } from "lucide-react"
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -83,74 +82,7 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex bg-muted/30">
-      
-      {/* ─── Sidebar ─── */}
-      <aside className="w-[240px] bg-background border-r border-border hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="p-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
-              V
-            </div>
-            <span className="font-bold text-xl tracking-tight text-foreground">VisionKirana</span>
-          </div>
-        </div>
-        <div className="px-4 py-2 flex-1">
-          <nav className="space-y-1">
-            <Button variant="secondary" className="w-full justify-start h-10 font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400">
-              <LayoutDashboard className="w-4 h-4 mr-3" /> Dashboard
-            </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground" onClick={() => navigate('/admin/shops')}>
-              <Building2 className="w-4 h-4 mr-3" /> All Shops
-            </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground" onClick={() => navigate('/admin/applications')}>
-              <Activity className="w-4 h-4 mr-3" /> Applications
-            </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground" onClick={() => navigate('/admin/users')}>
-              <Users className="w-4 h-4 mr-3" /> Users Directory
-            </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground" onClick={() => navigate('/admin/audit-logs')}>
-              <ShieldCheck className="w-4 h-4 mr-3" /> Audit Logs
-            </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground mt-4">
-              <Settings className="w-4 h-4 mr-3" /> System Settings
-            </Button>
-          </nav>
-        </div>
-      </aside>
-
-      {/* ─── Main Content ─── */}
-      <main className="flex-1 flex flex-col min-w-0">
-        
-        {/* Header */}
-        <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-foreground hidden sm:block">Admin Overview</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search platform..." 
-                className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground">
-              <Bell className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center gap-2 pl-2 border-l border-border">
-              <span className="text-sm font-medium text-foreground hidden sm:block">{user?.full_name || "Admin User"}</span>
-              <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-sm font-semibold">
-                AD
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="p-6 max-w-7xl mx-auto w-full space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto w-full">
           
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-foreground">System Analytics</h2>
@@ -248,10 +180,6 @@ export function AdminDashboard() {
               </CardContent>
             </Card>
           </div>
-
-        </div>
-      </main>
-
       <ViewDocumentsModal 
         applicationId={viewingDocsAppId} 
         isOpen={!!viewingDocsAppId} 

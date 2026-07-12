@@ -1,12 +1,8 @@
-import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ThemeToggle } from "@/components/ThemeToggle"
 import { 
-  Clock, CheckCircle, FileText, Activity, LayoutDashboard, 
-  Settings, Search, Bell, SearchCheck
+  Clock, CheckCircle, FileText, Activity 
 } from "lucide-react"
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -33,7 +29,6 @@ const mainChartData = [
 export function LoanOfficerDashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [searchQuery, setSearchQuery] = useState("")
   
   const { data: stats, isLoading, error } = useQuery<any>({
     queryKey: ['adminDashboardStats'],
@@ -62,65 +57,7 @@ export function LoanOfficerDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex bg-muted/30">
-      
-      {/* ─── Sidebar ─── */}
-      <aside className="w-[240px] bg-background border-r border-border hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="p-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
-              V
-            </div>
-            <span className="font-bold text-xl tracking-tight text-foreground">VisionKirana</span>
-          </div>
-        </div>
-        <div className="px-4 py-2 flex-1">
-          <nav className="space-y-1">
-            <Button variant="secondary" className="w-full justify-start h-10 font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400">
-              <LayoutDashboard className="w-4 h-4 mr-3" /> Dashboard
-            </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground" onClick={() => navigate('/admin/applications')}>
-              <SearchCheck className="w-4 h-4 mr-3" /> Review Queue
-            </Button>
-            <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:text-foreground mt-4">
-              <Settings className="w-4 h-4 mr-3" /> Settings
-            </Button>
-          </nav>
-        </div>
-      </aside>
-
-      {/* ─── Main Content ─── */}
-      <main className="flex-1 flex flex-col min-w-0">
-        
-        {/* Header */}
-        <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-foreground hidden sm:block">Officer Workspace</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search applications..." 
-                className="w-64 pl-9 h-9 bg-muted/50 border-transparent focus-visible:border-indigo-500 rounded-full" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground">
-              <Bell className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center gap-2 pl-2 border-l border-border">
-              <span className="text-sm font-medium text-foreground hidden sm:block">{user?.full_name || "Loan Officer"}</span>
-              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-sm font-semibold">
-                LO
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="p-6 max-w-7xl mx-auto w-full space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto w-full">
           
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-foreground">Queue Overview</h2>
@@ -210,9 +147,6 @@ export function LoanOfficerDashboard() {
               </CardContent>
             </Card>
           </div>
-
-        </div>
-      </main>
     </div>
   )
 }

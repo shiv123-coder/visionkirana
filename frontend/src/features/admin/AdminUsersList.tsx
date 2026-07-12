@@ -62,12 +62,17 @@ export function AdminUsersList() {
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
+      // Hide admin users from loan officers
+      if (currentUser?.role === 'loan_officer' && user.role === 'admin') {
+        return false;
+      }
+      
       const matchesSearch = user.email?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             user.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRole = roleFilter === "all" || user.role === roleFilter;
       return matchesSearch && matchesRole;
     })
-  }, [users, searchQuery, roleFilter])
+  }, [users, searchQuery, roleFilter, currentUser])
 
   if (isLoading) {
     return (
@@ -135,7 +140,7 @@ export function AdminUsersList() {
                 onChange={(e) => setRoleFilter(e.target.value)}
               >
                 <option value="all">All Roles</option>
-                <option value="admin">Admins</option>
+                {currentUser?.role !== 'loan_officer' && <option value="admin">Admins</option>}
                 <option value="loan_officer">Loan Officers</option>
                 <option value="shop_owner">Shop Owners</option>
                 <option value="user">Standard Users</option>
