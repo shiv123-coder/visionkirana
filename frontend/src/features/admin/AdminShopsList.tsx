@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { fetchAdminShops } from "@/services/adminService"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 import { useAuth } from "@/contexts/AuthContext"
 import { 
   Building2, Users, LayoutDashboard, Settings, Search, Bell, 
-  Activity, ShieldCheck, MapPin, ChevronLeft, ChevronRight, CheckCircle2, XCircle, FileSearch
+  Activity, ShieldCheck, MapPin, ChevronLeft, ChevronRight, XCircle, FileSearch
 } from "lucide-react"
 import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
 
@@ -109,7 +109,7 @@ export function AdminShopsList() {
               <Bell className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2 pl-2 border-l border-border">
-              <span className="text-sm font-medium text-foreground hidden sm:block">{user?.displayName || "Admin User"}</span>
+              <span className="text-sm font-medium text-foreground hidden sm:block">{user?.full_name || "Admin User"}</span>
               <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-sm font-semibold">
                 AD
               </div>

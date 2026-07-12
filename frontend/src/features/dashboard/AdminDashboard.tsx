@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { 
   Building2, Users, TrendingUp, AlertOctagon, LayoutDashboard, 
-  Settings, Search, Bell, Activity, ShieldCheck, MapPin
+  Settings, Search, Bell, Activity, ShieldCheck
 } from "lucide-react"
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -47,11 +47,11 @@ export function AdminDashboard() {
     refetchInterval: 10000
   })
 
-  const { data: appsResponse } = useQuery({
+  const { data: appsResponse } = useQuery<any[]>({
     queryKey: ['adminApplications'],
     queryFn: async () => {
       const { data } = await getAllApplicationsApiV1AdminApplicationsGet()
-      return data || []
+      return (data as any[]) || []
     },
     refetchInterval: 15000
   })
@@ -142,7 +142,7 @@ export function AdminDashboard() {
               <Bell className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2 pl-2 border-l border-border">
-              <span className="text-sm font-medium text-foreground hidden sm:block">{user?.displayName || "Admin User"}</span>
+              <span className="text-sm font-medium text-foreground hidden sm:block">{user?.full_name || "Admin User"}</span>
               <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-sm font-semibold">
                 AD
               </div>

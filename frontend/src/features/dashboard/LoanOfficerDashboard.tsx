@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { 
   Clock, CheckCircle, FileText, Activity, LayoutDashboard, 
-  Settings, Search, Bell, SearchCheck, MapPin
+  Settings, Search, Bell, SearchCheck
 } from "lucide-react"
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -112,7 +112,7 @@ export function LoanOfficerDashboard() {
               <Bell className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2 pl-2 border-l border-border">
-              <span className="text-sm font-medium text-foreground hidden sm:block">{user?.displayName || "Loan Officer"}</span>
+              <span className="text-sm font-medium text-foreground hidden sm:block">{user?.full_name || "Loan Officer"}</span>
               <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-sm font-semibold">
                 LO
               </div>

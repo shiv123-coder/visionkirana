@@ -57,7 +57,7 @@ export function ShopRegistrationForm() {
         })
         setIsCapturingLoc(false)
       },
-      (err) => {
+      () => {
         setIsCapturingLoc(false)
         setLocationError("Permission denied or unable to fetch location. Please allow location access to continue.")
       },
@@ -178,7 +178,7 @@ export function ShopRegistrationForm() {
                   <Input 
                     id="owner_name" 
                     {...register("owner_name")} 
-                    value={user?.displayName || user?.email?.split('@')[0] || ""}
+                    value={user?.full_name || user?.email?.split('@')[0] || ""}
                     readOnly
                     className="bg-muted text-muted-foreground cursor-not-allowed"
                   />

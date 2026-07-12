@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Download, Calendar, ArrowRight, PieChart } from "lucide-react"
+import { FileText, Download, Calendar, PieChart } from "lucide-react"
 
 export function ReportsView() {
   return (
