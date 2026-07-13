@@ -48,10 +48,7 @@ def trigger_analysis(
     })
     
     def simulate_ml_analysis(app_id: str):
-        import time
         from google.cloud.firestore import SERVER_TIMESTAMP
-        # Simulate quick AI processing (1 second instead of getting stuck on Render)
-        time.sleep(1)
         
         # Simulated report matching what report.py expects
         simulated_report = {

@@ -58,6 +58,21 @@ def mark_all_user_notifications_as_read(
     notif_repo.mark_all_as_read(user_id=uid)
     return {"status": "success", "message": "Notifications marked as read"}
 
+@router.delete("/me/notifications/{notif_id}")
+def delete_user_notification(
+    notif_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_active_user),
+    notif_repo: NotificationRepository = Depends(get_notification_repo)
+):
+    uid = current_user.get("uid") or current_user.get("id")
+    if not uid:
+        raise HTTPException(status_code=400, detail="User ID not found")
+        
+    success = notif_repo.delete_notification(notif_id, user_id=uid)
+    if not success:
+        raise HTTPException(status_code=404, detail="Notification not found or access denied")
+    return {"status": "success", "message": "Notification deleted"}
+
 @router.delete("/me")
 def delete_user_account(
     current_user: Dict[str, Any] = Depends(get_current_active_user)

@@ -50,3 +50,21 @@ export const markAllUserNotificationsAsRead = async () => {
   
   return response.json();
 }
+
+export const deleteUserNotification = async (id: string) => {
+  const token = localStorage.getItem("access_token");
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  const response = await fetch(`${apiUrl}/api/v1/users/me/notifications/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to delete notification');
+  }
+  
+  return response.json();
+}

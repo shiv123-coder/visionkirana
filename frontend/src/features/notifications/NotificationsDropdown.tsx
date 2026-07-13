@@ -1,12 +1,13 @@
 import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Bell, Check, Clock, ShieldCheck, FileText, Store, Info, AlertCircle, Loader2 } from "lucide-react"
+import { Bell, Check, Clock, ShieldCheck, FileText, Store, Info, AlertCircle, Loader2, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { fetchAdminNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "@/services/adminService"
-import { fetchUserNotifications, markUserNotificationAsRead, markAllUserNotificationsAsRead } from "@/services/userService"
+import { fetchAdminNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteAdminNotification } from "@/services/adminService"
+import { fetchUserNotifications, markUserNotificationAsRead, markAllUserNotificationsAsRead, deleteUserNotification } from "@/services/userService"
 import { useNavigate } from "react-router-dom"
 import { Link } from "react-router-dom"
+import { Button } from "@/components/ui/button"
 
 export function NotificationsDropdown() {
   const { user } = useAuth()
@@ -35,6 +36,14 @@ export function NotificationsDropdown() {
   // Mark all as read mutation
   const markAllAsReadMutation = useMutation({
     mutationFn: () => isAdminOrOfficer ? markAllNotificationsAsRead() : markAllUserNotificationsAsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.role] })
+    }
+  })
+
+  // Delete single notification mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => isAdminOrOfficer ? deleteAdminNotification(id) : deleteUserNotification(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications", user?.role] })
     }
@@ -125,16 +134,16 @@ export function NotificationsDropdown() {
                     <div 
                       key={notif.id} 
                       className={cn(
-                        "p-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors flex items-start space-x-3 cursor-pointer group",
+                        "p-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors flex items-start space-x-3 cursor-pointer group relative",
                         !isRead ? "bg-primary/5" : ""
                       )}
                       onClick={() => handleNotificationClick(notif)}
                     >
-                      <div className="mt-0.5 bg-background border rounded-full p-1.5 shadow-sm group-hover:scale-110 transition-transform">
+                      <div className="mt-0.5 bg-background border rounded-full p-1.5 shadow-sm group-hover:scale-110 transition-transform shrink-0">
                         {getIcon(notif.type)}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-sm truncate", !isRead ? "font-semibold" : "font-medium")}>
+                      <div className="flex-1 min-w-0 pr-8">
+                        <p className={cn("text-sm truncate pr-2", !isRead ? "font-semibold" : "font-medium")}>
                           {notif.title}
                         </p>
                         <p className={cn("text-xs line-clamp-2 mt-0.5", !isRead ? "text-foreground/80" : "text-muted-foreground")}>
@@ -144,7 +153,39 @@ export function NotificationsDropdown() {
                           {notif.time && notif.time !== "Just now" ? new Date(notif.time).toLocaleString() : "Just now"}
                         </p>
                       </div>
-                      {!isRead && <div className="w-2 h-2 bg-primary rounded-full mt-1.5 shrink-0" />}
+                      {!isRead && <div className="w-2 h-2 bg-primary rounded-full absolute right-3 top-4 shrink-0 group-hover:hidden" />}
+                      
+                      {/* Action Buttons (visible on hover) */}
+                      <div className="absolute right-2 top-2 hidden group-hover:flex items-center gap-1 bg-card/80 backdrop-blur-sm rounded-md p-1 shadow-sm border">
+                        {!isRead && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsReadMutation.mutate(notif.id);
+                            }}
+                            disabled={markAsReadMutation.isPending}
+                            title="Mark as read"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteMutation.mutate(notif.id);
+                          }}
+                          disabled={deleteMutation.isPending}
+                          title="Delete notification"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   )
                 })
