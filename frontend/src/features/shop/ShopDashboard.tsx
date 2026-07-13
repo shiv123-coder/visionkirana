@@ -8,7 +8,7 @@ import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { NotificationsDropdown } from "@/features/notifications/NotificationsDropdown"
 import { 
-  PlusCircle, LayoutDashboard, BadgeDollarSign, Package, Users, Megaphone, 
+  PlusCircle, LayoutDashboard, BadgeDollarSign, Package, Users,
   BarChart2, Settings, Search, ShoppingCart, 
   Wallet, X, AlertCircle, MapPin, Store, Trash2, Image as ImageIcon, FileText, Mic
 } from "lucide-react"
@@ -323,8 +323,6 @@ export function ShopDashboard() {
               const approvedApp = shop.applications?.find(a => a.status === 'approved')
               const latestApp = shop.applications && shop.applications.length > 0 ? shop.applications[shop.applications.length - 1] : null
               
-              // Helper to check if any app is currently in a blocking state
-              const hasBlockingApp = pendingApp || activeApp || approvedApp;
               
               return (
                 <tr key={shop.id} className="hover:bg-muted/10 transition-colors">
@@ -343,15 +341,23 @@ export function ShopDashboard() {
                   <td className="px-6 py-4 text-muted-foreground">{shop.city}, {shop.state}</td>
                   <td className="px-6 py-4 text-muted-foreground">{shop.owner_name}</td>
                   <td className="px-6 py-4">
-                    {shopEvidenceCounts[shop.id] ? (
-                      <div className="flex flex-col gap-1 text-xs whitespace-nowrap">
-                        {shopEvidenceCounts[shop.id].images > 0 && <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><ImageIcon className="w-3 h-3"/> {shopEvidenceCounts[shop.id].images} Visuals</span>}
-                        {shopEvidenceCounts[shop.id].docs > 0 && <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><FileText className="w-3 h-3"/> {shopEvidenceCounts[shop.id].docs} Docs</span>}
-                        {shopEvidenceCounts[shop.id].audio > 0 && <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><Mic className="w-3 h-3"/> {shopEvidenceCounts[shop.id].audio} Audio</span>}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">-</span>
-                    )}
+                    <div className="flex flex-col gap-2 items-start">
+                      {shopEvidenceCounts[shop.id] ? (
+                        <div className="flex flex-col gap-1 text-xs whitespace-nowrap">
+                          {shopEvidenceCounts[shop.id].images > 0 && <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><ImageIcon className="w-3 h-3"/> {shopEvidenceCounts[shop.id].images} Visuals</span>}
+                          {shopEvidenceCounts[shop.id].docs > 0 && <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><FileText className="w-3 h-3"/> {shopEvidenceCounts[shop.id].docs} Docs</span>}
+                          {shopEvidenceCounts[shop.id].audio > 0 && <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><Mic className="w-3 h-3"/> {shopEvidenceCounts[shop.id].audio} Audio</span>}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                      
+                      {latestApp && (
+                        <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 py-0" onClick={() => setViewingDocsAppId(latestApp.id.toString())}>
+                          View Docs
+                        </Button>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-foreground font-medium">₹{(shop.monthly_sales).toLocaleString()}</td>
                   <td className="px-6 py-4">
@@ -361,18 +367,13 @@ export function ShopDashboard() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      {latestApp && (
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setViewingDocsAppId(latestApp.id.toString())}>
-                          View Docs
-                        </Button>
-                      )}
                       {approvedApp ? (
                         <Button variant="outline" size="sm" className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400" onClick={() => navigate(`/verify-loan/${approvedApp.id}`)}>
                           PDF
                         </Button>
                       ) : pendingApp ? (
                         <Button variant="outline" size="sm" className="h-7 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400" onClick={() => navigate(`/applications/${pendingApp.id}/documents`)}>
-                          Upload
+                          Apply
                         </Button>
                       ) : !activeApp ? (
                         <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setIsApplyLoanOpen(shop.id)}>

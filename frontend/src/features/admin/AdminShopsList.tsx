@@ -150,27 +150,32 @@ export function AdminShopsList() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {shopEvidenceCounts[shop.id] ? (
-                        <div className="flex flex-col gap-1 text-xs whitespace-nowrap">
-                          {shopEvidenceCounts[shop.id].images > 0 && <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><ImageIcon className="w-3 h-3"/> {shopEvidenceCounts[shop.id].images} Visuals</span>}
-                          {shopEvidenceCounts[shop.id].docs > 0 && <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><FileText className="w-3 h-3"/> {shopEvidenceCounts[shop.id].docs} Docs</span>}
-                          {shopEvidenceCounts[shop.id].audio > 0 && <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><Mic className="w-3 h-3"/> {shopEvidenceCounts[shop.id].audio} Audio</span>}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
+                      <div className="flex flex-col gap-2 items-start">
+                        {shopEvidenceCounts[shop.id] ? (
+                          <div className="flex flex-col gap-1 text-xs whitespace-nowrap">
+                            {shopEvidenceCounts[shop.id].images > 0 && <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><ImageIcon className="w-3 h-3"/> {shopEvidenceCounts[shop.id].images} Visuals</span>}
+                            {shopEvidenceCounts[shop.id].docs > 0 && <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><FileText className="w-3 h-3"/> {shopEvidenceCounts[shop.id].docs} Docs</span>}
+                            {shopEvidenceCounts[shop.id].audio > 0 && <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><Mic className="w-3 h-3"/> {shopEvidenceCounts[shop.id].audio} Audio</span>}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                        
+                        {shop.applications && shop.applications.length > 0 && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-6 text-[10px] px-2 py-0 mt-1"
+                            onClick={() => setViewingDocsAppId(shop.applications[shop.applications.length - 1].id.toString())}
+                          >
+                            <FileSearch className="w-3 h-3 mr-1" /> View Docs
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right font-medium text-foreground">₹{shop.monthly_sales?.toLocaleString()}</TableCell>
                     <TableCell className="text-right">
-                      {shop.applications && shop.applications.length > 0 && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setViewingDocsAppId(shop.applications[shop.applications.length - 1].id.toString())}
-                        >
-                          <FileSearch className="w-4 h-4 mr-2" /> View Docs
-                        </Button>
-                      )}
+                       <span className="text-muted-foreground text-xs">-</span>
                     </TableCell>
                   </TableRow>
                 ))}

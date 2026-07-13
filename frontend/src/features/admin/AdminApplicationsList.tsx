@@ -113,22 +113,30 @@ export function AdminApplicationsList() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {appEvidenceCounts[app.id] ? (
-                          <div className="flex flex-col gap-1 text-xs whitespace-nowrap">
-                            {appEvidenceCounts[app.id].images > 0 && <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><ImageIcon className="w-3 h-3"/> {appEvidenceCounts[app.id].images} Visuals</span>}
-                            {appEvidenceCounts[app.id].docs > 0 && <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><FileText className="w-3 h-3"/> {appEvidenceCounts[app.id].docs} Docs</span>}
-                            {appEvidenceCounts[app.id].audio > 0 && <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><Mic className="w-3 h-3"/> {appEvidenceCounts[app.id].audio} Audio</span>}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
+                        <div className="flex flex-col gap-2 items-start">
+                          {appEvidenceCounts[app.id] ? (
+                            <div className="flex flex-col gap-1 text-xs whitespace-nowrap">
+                              {appEvidenceCounts[app.id].images > 0 && <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><ImageIcon className="w-3 h-3"/> {appEvidenceCounts[app.id].images} Visuals</span>}
+                              {appEvidenceCounts[app.id].docs > 0 && <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><FileText className="w-3 h-3"/> {appEvidenceCounts[app.id].docs} Docs</span>}
+                              {appEvidenceCounts[app.id].audio > 0 && <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><Mic className="w-3 h-3"/> {appEvidenceCounts[app.id].audio} Audio</span>}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-6 text-[10px] px-2 py-0 mt-1"
+                            onClick={() => setViewingDocsAppId(app.id.toString())}
+                          >
+                            <FileSearch className="w-3 h-3 mr-1" /> View Docs
+                          </Button>
+                        </div>
                       </TableCell>
                       <TableCell>{app.risk_category || "Unassessed"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setViewingDocsAppId(app.id.toString())}>
-                            <FileSearch className="w-4 h-4 mr-2" /> View Docs
-                          </Button>
                           <Link to={`/applications/${app.id}/report`}>
                             <Button variant="outline" size="sm">
                               <Eye className="w-4 h-4 mr-2" /> View Report
