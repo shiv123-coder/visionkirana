@@ -10,7 +10,7 @@ import { NotificationsDropdown } from "@/features/notifications/NotificationsDro
 import { 
   PlusCircle, LayoutDashboard, BadgeDollarSign, Package, Users,
   BarChart2, Settings, Search, ShoppingCart, 
-  Wallet, X, AlertCircle, MapPin, Store, Trash2, Image as ImageIcon, FileText, Mic
+  Wallet, X, AlertCircle, MapPin, Store, Trash2, Image as ImageIcon, FileText, Mic, LogOut
 } from "lucide-react"
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -469,6 +469,11 @@ export function ShopDashboard() {
               <Settings className="w-4 h-4 mr-3" /> Settings
             </Button>
           </nav>
+        </div>
+        <div className="p-4 border-t border-border mt-auto">
+          <Button variant="ghost" className="w-full justify-start h-10 font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" onClick={logout}>
+            <LogOut className="w-4 h-4 mr-3" /> Sign Out
+          </Button>
         </div>
       </aside>
 
