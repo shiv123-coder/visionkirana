@@ -141,7 +141,7 @@ export function LoanOfficerDashboard() {
               </CardHeader>
               <CardContent className="space-y-4 mt-2">
                 <p className="text-sm text-muted-foreground mb-4">You have 5 high-priority applications waiting in queue.</p>
-                <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" onClick={() => navigate('/admin/applications')}>
+                <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" onClick={() => navigate('/officer/applications')}>
                   Go to Queue
                 </Button>
               </CardContent>

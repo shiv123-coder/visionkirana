@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { fetchAdminApplications } from "@/services/adminService"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { fetchAdminApplications, updateApplicationStatus } from "@/services/adminService"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { FileText, Eye, ChevronLeft, ChevronRight, FileSearch, Image as ImageIcon, Mic } from "lucide-react"
+import { FileText, Eye, ChevronLeft, ChevronRight, FileSearch, Image as ImageIcon, Mic, CheckCircle2, XCircle } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { ViewDocumentsModal } from "@/components/ui/ViewDocumentsModal"
@@ -13,6 +13,7 @@ export function AdminApplicationsList() {
   const [page, setPage] = useState(0)
   const [viewingDocsAppId, setViewingDocsAppId] = useState<string | null>(null)
   const limit = 50
+  const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['adminApplications', page],
@@ -20,6 +21,13 @@ export function AdminApplicationsList() {
     refetchInterval: 5000
   })
   const applications = (data as any[]) || []
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ appId, status }: { appId: string, status: string }) => updateApplicationStatus(appId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminApplications"] })
+    }
+  })
 
   const [appEvidenceCounts, setAppEvidenceCounts] = useState<Record<number, {images: number, docs: number, audio: number}>>({})
 
@@ -137,6 +145,26 @@ export function AdminApplicationsList() {
                       <TableCell>{app.risk_category || "Unassessed"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="bg-green-50 hover:bg-green-100 text-green-600 border-green-200"
+                            onClick={() => updateStatusMutation.mutate({ appId: app.id.toString(), status: "approved" })}
+                            disabled={updateStatusMutation.isPending || app.status === "approved"}
+                            title="Approve Loan"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+                            onClick={() => updateStatusMutation.mutate({ appId: app.id.toString(), status: "rejected" })}
+                            disabled={updateStatusMutation.isPending || app.status === "rejected"}
+                            title="Reject Loan"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </Button>
                           <Link to={`/applications/${app.id}/report`}>
                             <Button variant="outline" size="sm">
                               <Eye className="w-4 h-4 mr-2" /> View Report

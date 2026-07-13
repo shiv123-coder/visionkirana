@@ -24,7 +24,7 @@ export function DocumentUploadView() {
     setUploadState(prev => ({ ...prev, [key]: { uploading: true, success: false } }))
     
     try {
-      const res = await uploadFile(file, parseInt(applicationId), category, type)
+      const res = await uploadFile(file, applicationId, category, type)
       setUploadState(prev => ({ ...prev, [key]: { uploading: false, success: true, docId: res.id.toString() } }))
     } catch (error: any) {
       setUploadState(prev => ({ ...prev, [key]: { uploading: false, success: false, error: error.message } }))

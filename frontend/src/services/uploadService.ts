@@ -18,7 +18,7 @@ export interface UploadResponse {
 
 export const uploadFile = async (
   file: File,
-  applicationId: number,
+  applicationId: string,
   fileCategory: FileCategory,
   specificType: SpecificType
 ): Promise<UploadResponse> => {
@@ -26,7 +26,7 @@ export const uploadFile = async (
   const { data, error } = await uploadEvidenceApiV1UploadPost({
     body: {
       file: file,
-      application_id: applicationId.toString(),
+      application_id: applicationId,
       file_category: fileCategory,
       specific_type: specificType
     }
