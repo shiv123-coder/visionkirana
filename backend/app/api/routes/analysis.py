@@ -93,11 +93,9 @@ def trigger_analysis(
             # Generate Notification for completion
             notif_repo.create_notification(
                 type="analysis_completed",
+                title="Analysis Completed",
                 message=f"AI analysis completed for application {app_id}.",
-                user_id=app_data.get("user_id"),
-                target_roles=["admin", "loan_officer", "shop_owner"],
-                related_entity_id=app_id,
-                related_entity_type="application"
+                user_id=app_data.get("user_id", "admin")
             )
         except Exception as e:
             import logging
