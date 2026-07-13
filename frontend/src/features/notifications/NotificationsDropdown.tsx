@@ -51,12 +51,14 @@ export function NotificationsDropdown() {
     setIsOpen(false)
     const basePath = user?.role === 'admin' ? '/admin' : user?.role === 'loan_officer' ? '/officer' : ''
     
-    if (notif.type === "info" || notif.title?.includes("Demo Request")) {
+    if (notif.title?.includes("Demo Request")) {
       navigate(`${basePath}/demo-requests`)
     } else if (notif.type === "new_shop_registered") {
       navigate(`${basePath}/shops`)
+    } else if (notif.title?.includes("Loan Application") || notif.type.includes("analysis")) {
+      navigate("/dashboard") // Shop owner goes to their dashboard to see loan updates
     } else {
-      navigate(basePath ? `${basePath}/notifications` : `/notifications`)
+      navigate(basePath ? `${basePath}/notifications` : `/dashboard`)
     }
   }
 
@@ -149,15 +151,17 @@ export function NotificationsDropdown() {
               )}
             </div>
             
-            <div className="p-2 border-t bg-muted/20 text-center">
-              <Link 
-                to={user?.role === 'admin' ? '/admin/notifications' : '/officer/notifications'}
-                onClick={() => setIsOpen(false)}
-                className="text-xs text-primary font-medium hover:underline inline-block w-full py-1"
-              >
-                View all notifications
-              </Link>
-            </div>
+            {isAdminOrOfficer && (
+              <div className="p-2 border-t bg-muted/20 text-center">
+                <Link 
+                  to={user?.role === 'admin' ? '/admin/notifications' : '/officer/notifications'}
+                  onClick={() => setIsOpen(false)}
+                  className="text-xs text-primary font-medium hover:underline inline-block w-full py-1"
+                >
+                  View all notifications
+                </Link>
+              </div>
+            )}
           </div>
         </>
       )}
