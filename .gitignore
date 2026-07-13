@@ -1,9 +1,13 @@
 # Node
 node_modules/
 dist/
+# .env files
 .env
-.env.local
-.env.example
+.env.*
+
+# Local dummy assets
+backend/dummy_assets/
+authentication.md
 
 # Python
 __pycache__/
