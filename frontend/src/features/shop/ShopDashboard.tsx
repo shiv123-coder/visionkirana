@@ -319,9 +319,12 @@ export function ShopDashboard() {
               .map((shop) => {
               const statusText = getStatusText(shop)
               const pendingApp = shop.applications?.find(a => a.status === 'pending_documents' || a.status === 'draft')
-              const activeApp = shop.applications?.find(a => a.status === 'processing' || a.status === 'under_review')
+              const activeApp = shop.applications?.find(a => ['processing', 'under_review', 'completed'].includes(a.status || ''))
               const approvedApp = shop.applications?.find(a => a.status === 'approved')
               const latestApp = shop.applications && shop.applications.length > 0 ? shop.applications[shop.applications.length - 1] : null
+              
+              // Helper to check if any app is currently in a blocking state
+              const hasBlockingApp = pendingApp || activeApp || approvedApp;
               
               return (
                 <tr key={shop.id} className="hover:bg-muted/10 transition-colors">

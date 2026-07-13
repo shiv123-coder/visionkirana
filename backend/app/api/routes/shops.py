@@ -115,6 +115,7 @@ def register_shop(
 def get_user_shops(
     current_user: Dict[str, Any] = Depends(require_shop_owner),
     shop_repo: ShopRepository = Depends(get_shop_repo),
+    app_repo: ApplicationRepository = Depends(get_application_repo),
     skip: int = 0,
     limit: int = 50
 ):
@@ -126,13 +127,24 @@ def get_user_shops(
     else:
         shops = shop_repo.get_shops_by_owner(uid, skip=skip, limit=limit)
         
+    # Attach applications to each shop
+    # In a real app we'd use a better query, but for now we'll fetch all apps and filter
+    all_apps = app_repo.get_all_applications(skip=0, limit=1000)
+    
+    for shop in shops:
+        shop_apps = [app for app in all_apps if app.get("shop_id") == shop["id"]]
+        # Sort chronologically
+        shop_apps.sort(key=lambda x: x.get("created_at") or "")
+        shop["applications"] = shop_apps
+        
     return shops
 
 @router.get("/{shop_id}")
 def get_shop(
     shop_id: str, 
     current_user: Dict[str, Any] = Depends(require_shop_owner),
-    shop_repo: ShopRepository = Depends(get_shop_repo)
+    shop_repo: ShopRepository = Depends(get_shop_repo),
+    app_repo: ApplicationRepository = Depends(get_application_repo)
 ):
     data = shop_repo.get_shop(shop_id)
     if not data:
@@ -144,6 +156,12 @@ def get_shop(
         if data.get("owner_id") != uid:
             raise HTTPException(status_code=403, detail="Not authorized to view this shop")
             
+    # Attach applications
+    all_apps = app_repo.get_all_applications(skip=0, limit=1000)
+    shop_apps = [app for app in all_apps if app.get("shop_id") == shop_id]
+    shop_apps.sort(key=lambda x: x.get("created_at") or "")
+    data["applications"] = shop_apps
+    
     return data
 
 @router.put("/{shop_id}")
