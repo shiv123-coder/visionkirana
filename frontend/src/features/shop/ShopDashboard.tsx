@@ -240,8 +240,14 @@ export function ShopDashboard() {
   }
 
   const getStatusText = (shop: Shop) => {
-    const activeApp = shop.applications?.find(a => ['processing', 'under_review', 'pending_documents', 'draft'].includes(a.status))
-    if (activeApp) return activeApp.status.replace(/_/g, ' ')
+    if (shop.applications && shop.applications.length > 0) {
+      // First check for any active applications
+      const activeApp = shop.applications.find(a => ['processing', 'under_review', 'pending_documents', 'draft'].includes(a.status))
+      if (activeApp) return activeApp.status.replace(/_/g, ' ')
+      
+      // Otherwise, show the status of the most recent application (approved, rejected, etc)
+      return shop.applications[shop.applications.length - 1].status.replace(/_/g, ' ')
+    }
     return 'active'
   }
 
