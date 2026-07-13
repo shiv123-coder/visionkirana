@@ -18,8 +18,8 @@ import firebase_admin
 DUMMY_ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dummy_assets")
 
 USERS_DATA = [
-    {"email": "shivashankrmali483@gmail.com", "password": "VisionKirana@123", "full_name": "Admin User", "role": "admin"},
-    {"email": "nageshmali2006@gmail.com", "password": "VisionKirana@123", "full_name": "Loan Officer", "role": "loan_officer"},
+    {"email": "shivashankrmali7@gmail.com", "password": "VisionKirana@123", "full_name": "Admin User", "role": "admin"},
+    {"email": "malishivashankr5@gmail.com", "password": "VisionKirana@123", "full_name": "Loan Officer", "role": "loan_officer"},
     {"email": "nageshmali098510@gmail.com", "password": "VisionKirana@123", "full_name": "Shop Owner 1", "role": "shop_owner"},
     {"email": "shivashankrmali5@gmail.com", "password": "VisionKirana@123", "full_name": "Shop Owner 2", "role": "shop_owner"}
 ]
